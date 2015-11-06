@@ -55,11 +55,11 @@ logger.info(sprintf('PID:%d - %s', feature('getpid'), mfilename), evalc('p.Resul
 if ~isempty(C0)
   graph_representation = 'cov';
   n = size(C0, 1);
-  assert(issymmetric(C0));
+  assert(check_issymmetric(C0));
 else
   graph_representation = 'adj';
   n = size(A0, 1);
-  assert(issymmetric(A0));
+  assert(check_issymmetric(A0));
 end
 
 assert(n>1);
