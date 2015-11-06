@@ -2,7 +2,7 @@ This is an organized version of the software for paper
 
 Yifei Ma, Tzu-Kuo Huang, Jeff Schneider, Active Search and Bandits on Graphs Using Sigma-Optimality, UAI 2015.
 
-It repreduces Figure 2 and Figure 3(a) as of now.
+It partially repreduces Figure 2 and Figure 3(a,b) as of now.
 
 
 ## HOW TO USE
@@ -32,7 +32,7 @@ It repreduces Figure 2 and Figure 3(a) as of now.
 * Contained both in mat file in exp/data_alg.mat and text file in exp/data_alg_selected.txt. They are the expected outputs from running the codes.
 
 
-## CORE FUNCTIONALITIES
+## ALGORITHMS IMPLEMENTED
 
 ### as_sopt_vanilla.m
 
@@ -48,5 +48,17 @@ It repreduces Figure 2 and Figure 3(a) as of now.
 
 * Also could be thought as non-repeated selection of Michal Valko, Rémi Munos, Branislav Kveton Tomáš Kocák, Spectral Bandits for Smooth Graph Functions. ICML 2014.
 
+## DATASET INCLUDED
+
+* toy --- graph for Figure 2
+
+* populated places 5000 -- Figure 3(a)
+
+* wikipedia_data --- Figure 3(b)
+
+* new_nips --- Fiure 3(c)
+
 ## TODO
+
 * include Xuezhi Wang, Roman Garnett, Jeff Schneider. Active Search on Graphs, SIGKDD 2013.
+* generate result for new_nips
