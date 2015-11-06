@@ -69,9 +69,9 @@ end
 
 %% run algorithm
 
-% for i = 1:numel(param_choices)
-gcp
-parfor i = 1:numel(param_choices)
+for i = 1:numel(param_choices)
+% gcp
+% parfor i = 1:numel(param_choices)
   % pick param
   param = param_choices(i);
   
