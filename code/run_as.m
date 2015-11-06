@@ -32,17 +32,17 @@ if ~exist('algorithm', 'var'), algorithm = @as_sopt_vanilla; end
 if ~exist('skipRunIfLogExists','var'), skipRunIfLogExists = false; end
 
 %% summarize
-data_alg_ID = sprintf('Data_%s_Alg_%s', dataset, func2str(algorithm));
+data_alg_str = sprintf('Data_%s_Alg_%s', dataset, func2str(algorithm));
 
-logger = log4m.getLogger(fullfile(logDir, [data_alg_ID, '.log']));
-logger.setFilename(fullfile(logDir, [data_alg_ID, '.log']));
+logger = log4m.getLogger(fullfile(logDir, [data_alg_str, '.log']));
+logger.setFilename(fullfile(logDir, [data_alg_str, '.log']));
 logger.setLogLevel(log4m.ALL);
 logger.info(logPrompt(mfilename), '===== starting =====');
 
 
 logger.info(logPrompt(mfilename), ...
   sprintf('%s, skipRunIfLogExists=%d', ...
-  data_alg_ID, skipRunIfLogExists));
+  data_alg_str, skipRunIfLogExists));
 
 %% parameter choices from script
 [A,y,choices_per_param] = configure_param_choices(dataset, algorithm);
@@ -75,7 +75,7 @@ for i = 1:numel(param_choices)
   % pick param
   param = param_choices(i);
   
-  logID = sprintf('%s_%06d.log', data_alg_ID, i);
+  logID = sprintf('%s_%06d.log', data_alg_str, i);
 
   if skipRunIfLogExists && exist(fullfile(logDir, logID), 'file')
     % check sync flags
@@ -98,8 +98,13 @@ auc = sum(hits, 1);
 [~, ind_sort_auc] = sort(auc, 'descend');
 hits_top15percent = mean(hits(:, ind_sort_auc(1:ceil(.15*size(hits, 2)))), 2);
 
-plot(hits_top15percent ./ sum(y));
+plot(hits_top15percent ./ sum(y) ,'o-');
+set(ylabel('Recall'), 'fontsize', 14);
+set(xlabel('number of data points queried'), 'fontsize', 14);
+set(title(sprintf('%s, top 15%% parameter choices', ...
+  data_alg_str)), 'fontsize', 14,'interpreter','none');
+
 
 clear C L A
-save(data_alg_ID);
-dlmwrite(sprintf('%s_selected.txt', data_alg_ID), selected, 'precision','% 8d')
+save(data_alg_str);
+dlmwrite(sprintf('%s_selected.txt', data_alg_str), selected, 'precision','% 8d')
