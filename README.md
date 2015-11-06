@@ -7,7 +7,7 @@ It partially repreduces Figure 2 and Figure 3(a,b) as of now.
 
 ## HOW TO USE
 
-* $git clone this/repository/from/top/of/page
+* $git clone this/repository/from/right/of/the/page
 
 * $cd code
 
