@@ -1,0 +1,212 @@
+% !TEX root = as_grf_sopt.tex
+\cite{wang2013active} proposed an active search algorithm for graphs, building on label propagation and semi-supervised 
+learning using Gaussian random fields \citep{zhu2003semi,zhu2003combining}. Despite decent empirical performances, this approach does not have any theoretical guarantee.
+\cite{vanchinathanadaptively} proposed a Gaussian-Process (GP) based algorithm, 
+GP-SELECT, for sequentially selecting instances with high user scores or ratings (rewards).   
+%, whose nodes are instances and edges encode pairwise similarity
+%between instances. An application, for example, can be finding publications related to a certain subject based on a citation network.
+This algorithm extends the popular GP-UCB algorithm \citep{cox1997sdo,auer2003using} for stochastic optimization and 
+inherits nice theoretical guarantees \citep{srinivas2012information}. 
+When applied to graphs, however, it tends to select nodes at the periphery of the graph because they have 
+large predictive variances, leading to large exploration factors in the GP-UCB selection rule.
+Yet the rewards of these nodes 
+reveal little information about the reward distribution over the whole graph. 
+
+Similar issues have been observed in active learning on graphs as well. 
+In their experiments, \cite{ma_2013} found that
+selection rules based on mutual information gain \citep{MIG}, which is closely related to 
+per-node predictive variances, usually end up selecting nodes at the periphery of a graph.
+\cite{mingji} proposed a selection criterion based on one-step lookahead decrease of the average variance of all remaining nodes, which effectively considers not only the predictive variance of the search node itself,
+but also its covariances with all remaining nodes. 
+This criterion corresponds to standard V-optimality 
+in experiment design. \cite{ma_2013} further improved the state of the art by using 
+the $\Sigma$-optimality criterion, which demonstrates greater robustness against outliers and 
+better empirical performances than V-optimality. Motivated by these recent advances, we propose 
+new active search algorithms that combine GP-UCB with $\Sigma$-optimality.
+
+\cite{valko2014spectral} considered bandit problems where arms correspond to nodes on a graph
+and the reward is a smooth function over the graph. Their algorithm can be viewed as a special 
+case of GP-UCB with a kernel defined by the inverse of a graph Laplacian (augmented with an identity matrix).
+To analyze the performance of their UCB-style algorithm, they propose the notion of 
+\textit{effective dimension} of a graph, which can be viewed as a measure of the spectral decay  
+of the kernel, thereby determining the performance of the algorithm \citep{srinivas2012information}.
+We also use the effective dimension to analyze our proposed methods.
+
+% As shown later, we benefit from the analysis techniques of \cite{contal2014gaussian} in proving 
+% theoretical guarantees of one of the proposed algorithms. They developed a GP optimization algorithm that achieves 
+% better theoretical guarantees than GP-UCB. By using their techniques, we are able to make a connection 
+% between exploration in the bandit optimization setting and the variance minimization principle in active learning.
+
+%it may not be robust against outliers, such as 
+%nodes at the boundary of a graph, because of the way it decides the amount of exploration.      
+
+
+%\subsection{Gaussian Process Bandit Optimization}
+%
+%
+%We use the following kernel matrix 
+%\begin{equation}
+%	\bK = (\cLap + \omega_0 \bI)^{-1},
+%	\label{eq:kernel}
+%\end{equation}	
+%where $\omega_0$ is a regularization parameter set to $|\bA|^{-1}$.%\todo{why and which norm?}
+%
+%If we apply the set of priors, 
+%\begin{equation}
+%	y(v_i) = f(v_i) + \epsilon
+%	,\quad
+%	\mathbf{f} \sim \mathcal{N}(0, \bK)
+%	,\quad
+%	\epsilon \stackrel{iid}{\sim} \mathcal{N}(0,\sigma^2)
+%	,
+%\end{equation}
+%where $\mathbf{f} = \begin{pmatrix}f(v_1),\dotsc,f(v_n)\end{pmatrix}^\top$, 
+%then the posterior inference, after pulling
+%$S_t=\{v_1,\dotsc,v_t\}$
+% and observing
+%$\by_t=\begin{pmatrix} y_1,\dotsc,y_t \end{pmatrix}^\top$, becomes
+%\begin{align*}
+%	\mathbf{f}_t &\sim \mathcal{N}(\bmu_t, \bC_t),\quad
+%	y(v_i) = f_t(v_i) + \epsilon,
+%	\\
+%	{\rm s.t.} &\left\{\begin{aligned}
+%		\mu_t(v)  &= \bk_{S_t,v}^\top(\sigma^2 \bI+\bK_{S_t,S_t})^{-1}\by_t
+%		\\
+%		 C_t(v,v') &= k_{v,v'} 
+%		-\bk_{S_t,v}^\top (\sigma^2 \bI+\bK_{S_t,S_t})^{-1}\bk_{S_t,v'}.
+%	\end{aligned}\right.
+%	\numberthis
+%	\label{eq:graph_update}
+%\end{align*}
+%
+%For the posterior covariance, define
+%\begin{equation}
+%	C_t(v,v') = \rho_t(v,v')\sigma_t(v)\sigma_t(v'),
+%\end{equation}
+%which implies that $\rho_t^2(v) = C_t(v,v)$.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\subsection{Search Heuristics}
+
+%Based on the posterior distribution of node labels, there are several criteria for the selection rule of the next node to acquire labels. 
+%We list three criteria in the following, all in the form of 
+%\begin{equation}
+%	\argmax_v \; \mu_t(v) + c_t \cdot g_t(v),
+%\end{equation}
+%where $\mu_t(v)$ is a greedy term, $c_t$ is an iteration-dependent constant which controls risks, and $g_t(v)$ is the objective function for a specific exploration heuristic.%
+%\todo{introduce cumulative regret.}
+%\todo{not sure if true: The cumulative regret can all be bounded by pure exploration algorithms applying only the $g_t(v)$ term.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\textbf{Spectral-UCB criterion} applies the following selection rule,
+%\begin{equation}
+%	v_{t+1} = \argmax_v \, \mu_t(v) + c_t\cdot\sigma_t(v),
+%	\label{eq:ucb_criterion}
+%\end{equation}
+%where $\sigma_t(v)=\sqrt{C_t(v,v)}$ is the exploration objective. 
+%In this case, exploration is connected to mutual information gain, because $g_v(t)$ by itself has the same argmax as the following, 
+%\begin{align*}
+%	I_t(y(v_t); \mathbf{f})
+%	&=
+%	H_t(y(v_t)) - H_t(y(v_t) \mid \mathbf{f})
+%	\\
+%	&= 
+%	\frac{1}{2}\log\left(1 + \frac{\sigma_t^2(v)}{\sigma^2}\right)
+%	.
+%%	  \geq
+%%  \frac{1}{2}\frac{\sigma_t^2(v)}{\sigma^2}
+%%  \frac{\log(1+M)}{M},
+%\end{align*}
+%
+%Standard UCB analysis shows that the cumulative regret%
+%\todo{not sure if true}
+%is indeed bounded by a pure exploration algorithm that maximizes information gain (\appref{app:sec:spectral_regret}).
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\textbf{V-Optimality} uses the following objective,
+%\begin{equation}
+%	g_t(v) =
+%	\frac{\sigma_t(v)}{\sqrt{1+\sigma_t^2(v)}}
+%	\cdot 
+%	\sqrt{\frac{1}{n} \sum_{j=1}^{n}\rho_t^2(v,v_j)\sigma_t^2(v_j)},
+%\end{equation}
+%where the exploration component is related to the reduction of expected Bayes risk, 
+%\begin{equation}
+%	\mathcal{R}_t = \mathbb{E} \sum_{j=1}^n \left( f_t(v_j)-\mu_t(v_j) \right)^2 = \sum_{j=1}^n C_t(v_j,v_j)
+%\end{equation}
+%because the rank-one update rule of \eqref{eq:var_update} indicates,
+%\begin{equation}
+%	\mathcal{R}_{t+1} = \mathcal{R}_t - 
+%	\sum_{j=1}^n
+%	\frac{\left( \rho_{t}(v_t,v_j)\sigma_{t}(v_t)\sigma_t(v_j) \right)^2}{\sigma^2+\sigma_t^2(v)}.
+%\end{equation}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%\subsection{Analysis of Spectral UCB}
+%
+%With probability no less than $\Phi(c_t)^2$, the true regret at time $t$,
+%\begin{equation}
+%	r_t = f(v_\ast) - f(v_t)\leq 2c_t\sigma_t,
+%\end{equation}
+%which coincidentally is also involved in the computation of expected information gain (i.e., mutual information) as,
+%\begin{align*}
+%	I_t(y(v_t); \mathbf{f})
+%	=
+%	H_t(y(v_t)) - H_t(y(v_t) \mid \mathbf{f})
+%	\\
+%	= 
+%	\frac{1}{2}\log\left(1 + \frac{\sigma_t^2(v)}{\sigma^2}\right)
+%	\geq
+%	\frac{1}{2}\frac{\sigma_t^2(v)}{\sigma^2}
+%	\frac{\log(1+M)}{M},
+%\end{align*}
+%
+%
+%\hrule
+%\textbf{(appendix: No regret)}
+%
+%\input{appendix_spectral_ucb_regret.tex}
+%
+%\hrule
+%where the last inequality comes from concavity of the logarithm function and holds for any fixed $M$ that satisfies,
+%\begin{equation}
+%	M
+%	\geq\sup_{v}\frac{\sigma_0^2(v)}{\sigma^2}
+%	\geq\sup_{t,v}\frac{\sigma_t^2(v)}{\sigma^2}.
+%\end{equation}
+%A simple choice is $M=\omega_0^{-1}$. 
+%
+%Since the information gain can be concatenated, we have a natural bound for cumulative regret, 
+%\begin{align*}
+%	&\sum_{t=1}^T r_t
+%	\leq 
+%	2 c_{\max_T} \sum_{t=1}^T \sigma_t(v_t)
+%	\leq
+%	2 c_{ \max_T } \sqrt{T \sum_{t=1}^T \sigma_t^2(v_t) }
+%	\\
+%	&\leq 
+%	2 c_{ \max_T } \sqrt{T \frac{2\sigma^2 M}{\log(1+M)} \sum_{t=1}^T I_t(y(v_t);\mathbf{f})}
+%	\\
+%	&= 
+%	2 c_{ \max_T } \sqrt{T \frac{2\sigma^2 M}{\log(1+M)} I(y(v_1),\dotsc,y(v_T);\mathbf{f})}
+%	\numberthis
+%	,
+%\end{align*}
+%with probability no less than,
+%\begin{equation}
+%	\prod_{t=1}^T\Phi(c_t)^2
+%	\geq
+%	\dotsc,
+%\end{equation}
+%where $c_{\max_T}=\max_{t=1,\dotsc,T}c_t$.

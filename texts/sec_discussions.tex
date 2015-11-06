@@ -1,0 +1,159 @@
+% !TEX root = as_grf_sopt.tex
+
+\subsection{DISCUSSIONS}
+
+
+Our approach and two other popular criteria, information gain from \cite{srinivas2012information} and V-optimality of \cite{mingji}, can also be connected by functions of the eigenvalues of the covariance matrix at each iteration.
+% Particularly, we are interested in primitives of monotone functions as described in \cite{spectral_submod}.
+
+% From the rank-one update rule, \eqref{eq:var_update}, the posterior covariance matrices at different iterations can be ordered using convex cone of postive semi-definite matrix (Loewner order) as 
+% $\bC_0\succ\bC_1\succ\dotsc\succ\bC_T\succ\mathbf{0}$. With this ordering, we can define monotone spectral operators, $h(\bC_t)$, that maps Hermitian matrices to real values, such that 
+% \begin{equation*}
+% h(\bC_t)>h(\bC_{t'}) \Leftrightarrow \bC_t\succ\bC_{t'}
+% \quad(\Leftrightarrow t<t'). 
+% \end{equation*}
+
+
+
+
+% Many exploration heuristics can be written as a function of the spectral difference between the current model and one-step look-ahead posterior model. 
+To see this connection, assume the updated covariance matrix at iteration $(t+1)$ has eigen-decomposition $\bC_t = \sum_{j=1}^n \lambda_{t,(j)}\bq_{t,(j)} \bq_{t,(j)}^\top$, where $\blambda_t=(\lambda_{t,(1)}, \dotsc,\lambda_{t,(n)})^\top$ represents the eigenvalues and  $\{\bq_{t,(j)}:j=1,\dotsc,n\}$ is the set of corresponding eigenvectors. Assume the eigenvalues are sorted by $\lambda_{t,(1)}\geq\dotsc\geq\lambda_{t,(n)}\geq0$.
+We hope to connect $s_t(v)$ to the following spectral difference,
+ % at the one-step difference of a spectral function $h(\blambda_t):\mathbb{R}^n\to\mathbb{R}$, as
+%\begin{align}
+%	\rho(\bC_t) &= \sum_{j=1}^n h(\lambda_{t,(j)}),
+%	\quad {\rm s.t.} \; 
+%	h'(s)>0, \forall s>0.
+%\end{align}
+%Correspondingly, assuming an observation of $v$, the exploration heuristic is then,
+\begin{equation}
+	\Delta h_t(v) = 
+	h\bigl(\blambda_{t}\bigr)
+	-
+	h\bigl(\blambda_{t+1\mid v}\bigr) 
+	% \\
+	% &{\rm s.t. } \;
+	% h'(s)>0, \forall s>0
+\end{equation}
+where $h(\blambda):\mathbb{R}^n\to\mathbb{R}$ is a multivariate function defined on the eigenvalues.
+Further, by the one-step update rule of \eqref{eq:var_update}, $\bC_t$ has Loewner order as 
+$\bC_0\succ\bC_1\succ\dotsc\succ\bC_T\succ\mathbf{0}$. 
+% for any monotone increasing function $h:\mathbb{R}^n\to\mathbb{R}$. 
+It is thus often desirable to require $h(\cdot)$ to be monotone with respect to this ordering, i.e. $\bC_t\succ\bC_{t'} \Rightarrow h(\blambda_t)\geq h(\blambda_{t'})$.
+% Notice that $\bC_t$ is positive semi-definite and $\lambda_{t,(j)}$ is monotone decreasing as $t$ increases, 
+% by applying Weyl's inequality to rank-one updates at each iteration.
+
+% where the difference inside $h^{-1}(\cdot)$ is nonnegative, because we can prove using induction and definition of eigen-vectors, for example with $j=1$
+% and 
+% $\bq_{t+1,(1)}$ being the eigen-vector corresponding to $\lambda_{t+1,(1)}$ in the posterior model,
+% $
+	% \lambda_{t,(j)}^2 - \lambda_{t+1,(1)}^2 
+	% \geq 
+	% \nicefrac{\langle \bq_{t+1,(1)}, \bc_{t+1}(v)\rangle^2}{(\sigma_n^2 - \sigma_{t+1}^2(v))}\geq0$.
+
+%For example, some reasonable choices of $s_t(v)$ are,
+%\begin{numcases}{\hspace{-2em}}
+%	\sqrt{ 1+\nicefrac{\sigma_t^2(v)}{\sigma_n^2}}
+%	 & $h_{ig}(s) = -log(s)$
+%	   \label{eq:s-ig}
+%	\\	   
+%	 \sqrt{\tr(\bC_{t}) - \tr(\bC_{t+1})},
+%	   & $h_2(s) = s^2$
+%	   \label{eq:s-variance}
+%	\\
+%	 \lambda_{\max}(\bC_{t}) - \lambda_{\max}(\bC_{t+1}),
+%	 \hspace{-1em}
+%	 & $h_\infty(s) = s^p, p\to\infty$
+%	   \label{eq:s-spectral}
+%\end{numcases}
+
+\textbf{Case 1}. $
+	h(\blambda) = \sum_j \log(\lambda_{(j)}).$ 
+	% the differential entropy of $\mathcal{N}(\bmu_t,\bC_t)$. 
+	Then,
+$	\Delta h_t(v) 
+	= 2\mathcal{I}_t(\bff; y(v)) = \log(1+\frac{\sigma_t^2(v)}{\sigma_n^2}),
+	% = \sqrt{ 1+\nicefrac{\sigma_t^2(v)}{\sigma_n^2}}.
+$ twice the information gain from $\bff\sim\mathcal{N}(\bmu_t, \bC_t)$ to $\mathcal{N}(\bmu_{t+1\mid v}, \bC_{t+1\mid v})$. 
+This metric is important to \textbf{GP-UCB} \citep{srinivas2012information}, which set $s_t(v)=\sigma_t(v)$ and used the inequality, $\log(1+\frac{\sigma_m^2}{\sigma_n^2})  \frac{\sigma_t^2(v)}{\sigma_m^2}\leq\log(1+\frac{\sigma_t^2(v)}{\sigma_n^2}),$ where $\sigma_m=\max_{v,t}\sigma_t(v)$, in its proofs.
+
+% This heuristic adds biases to maximize the differential information gain of the joint distribution of node values, turns out to pay too much attention to the graph periphery, which actually prevents information gathering in the true problem against intuition. Precisely, differential entropy is sensitive to tails of the distribution, which happens to be the place of the biggest model mismatch of our \textsc{grf} models. 
+
+
+
+\textbf{Case 2}. $
+	h(\blambda) = \sum_j \lambda_{(j)} $ 
+	gives
+	$
+	\Delta h_t(v) = \tr(\bC_{t}) - \tr(\bC_{t+1\mid v}) =  \nicefrac{ \| \bc_t(v) \|_2^2 }{(\sigma_t^2(v) + \sigma_n^2)}.
+$ For $\sigma_n= 0$, $\Delta h_t(v)$ is used as the greedy \textbf{V-optimal} criterion for design of experiments by \cite{mingji}.
+%, which though alleviates the situation by adding independence assumptions on the nodes and measuring the sum of the marginal variances, cannot completely address the selection bias at graph peripheries, because the self-variance term usually dominates the sum of squares of $\|\bc_t(v)\|_2^2$.
+
+
+\textbf{Case 3}. $
+	h(\blambda) = \lambda_{(1)}$ connects to the greedy design for \textbf{E-optimality} \citep{pukelsheim1993optimal}. To some extent, it is also related to greedy \textbf{$\Sigma$-Optimality}. First,
+	approximate $\Delta h_t(v)$ by $\partial\lambda_{(j)} = \bq_{(j)}^\top \partial(\bC) \bq_{(j)}$ around $\bC=\bC_t$, as
+\vspace{-.5em}
+\begin{equation*}
+	\Delta h_t(v) 
+	% &
+	\approx 
+	\bq_{t,(1)}^\top (\bC_t-\bC_{t+1|v}) \bq_{t,(1)}
+	= 
+	 \bigg( 
+		\frac{|\bc_t(v)^\top \bq_{t,(1)}|}
+	{\sqrt{\sigma_t(v)^2 + \sigma_n^2}}
+	 \bigg)^2
+	%  \\
+	%  &=
+	%  \bigg( 
+	% 	\frac{\lambda_{(1)} \cdot |q_{t(1)}(v)|}
+	% {\sqrt{\sigma_t(v)^2 + \sigma_n^2}}
+	%  \bigg)^2
+	\end{equation*}
+The above resembles \eqref{eq:sopt} if $\bq_{t,(1)}\propto \bone$, which holds true for $t=0$ and $\omega_0=0$ and approximately so for small $t$s.
+
+
+
+In all these cases, exploration is measured by how much the objective, $h(\blambda_T)$, is eventually decreased after $T$ iterations. 
+Each definition of $h(\blambda_t)$ aggregates the eigenvalues of the posterior covariance matrices in a different way, which 
+affects the relative importance of large and small eigenvalues. In \textbf{Case 1}, since $\frac{\partial \log(\lambda)}{\partial \lambda}=\frac{1}{\lambda}$, the same change introduced to a smaller $\lambda$ will have a relatively larger impact on the objective.
+ % than a larger $\lambda$. 
+Such an effect is not evident in the other two cases. 
+Particularly in \textbf{Case 3}, changes to small eigenvalues are ignored unless they become the largest eigenvalue. 
+
+
+Establishing biases to penalize larger eigenvalues more has the benefit of improving global robustness because the posterior marginal variance of every node is upper-bounded by $\lambda_{t,(1)}$. 
+Compared with \textbf{Cases 2} and \textbf{3}, \textbf{Case 1} is more sensitive to changes in small eigenvalues, which may be another explanation
+of \textbf{GP-UCB}'s strong tendency to select peripheral nodes, as seen in Figure 4 of \cite{MIG} or Figure 1(d) of \cite{gotovos2013active}. 
+
+Although Algorithm~\ref{alg:main} is not built around the concept of functions on eigenvalues, it still establishes strong biases to penalize large eigenvalues in its initial explorations, per analysis in \textbf{Case 3}. 
+Note that \textbf{$\Sigma$-optimality} achieves a more complex goal than \textbf{E-optimality}; exact execution of \textbf{E-optimality} may over-simplify the model and select nodes between clusters for separation rather than inside them.
+
+
+% First, assuming that the principal eigen-vector of $\bC_t$ is $\bq_t$, then
+% $
+% 	\lambda_{\max}^2(\bC_{t+1} \mid v) \approx \lambda_{\max}^2(\bC_t) - 
+% 	\frac{\langle \bq_t,  \bc_t(v)\rangle^2}
+% 	{ (\sigma_t^2(v) + \sigma_n^2) }
+% $ and, compounding the square-root operator,
+% $
+% 	s_t(v) \approx \frac{1}{2\lambda_{\max}(\bC_t)}
+% 	\frac{\bc_t(v)^\top \bq_t}
+% 	{\sqrt{\sigma_t(v)^2 + \sigma_n^2}}.
+% $
+
+
+% This approximation works for the very first selections. Note that $\bC_0^{-1}=\bD-\bA+\omega_0\bI$ has its smallest eigen-vector (with respect to $\omega_0$) very close to $\frac{1}{n}\mathbf{1}$, that same vector carries to be $\bq_0$ for the largest eigen-value of $\bC_0$. At this point, $s_t(v)$ is our Sigma-optimality up to a selection-independent constant.
+
+
+% In fact, this approximation can be valid for larger $t$'s. Further break the graph down to different (relatively isolated) connected components, where each individual component is relatively unexplored, and therefore contains a principal eigen-vector,  relative to the component, which will approximate
+% $\bq_{t,(c)}\approx\mathbf{1}_\cC$, where $c$ is the rank of this eigen-vector and $\cC$ the subset of nodes of this connected component. The more under-explored the component is, the more likely that $\bq_{t,(c)}$ becomes the principal eigen-vector, $\bq_t$ and also $\bq_{t,(c)}$ gets close to $\mathbf{1}_\cC$.
+
+% In the meantime, every column on the current covariance matrix $\bc_t(v)$ will also reflect independence between these (relatively isolated) components. Thus, the inner product can be roughly approximated as, 
+% $ %\begin{equation}
+% 	\bq_t^\top \bc_t(v) \approx \mathbf{1}_\cC^\top \bc_t(v)  + \mathbf{1}_{\bar{\cC}}^\top \mathbf{0} = \mathbf{1}^\top \bc_t(v),
+% $ %\end{equation}
+% where $\bar{\cC}$ is the complement of $\cC$. 
+% Again, Sigma-optimality approximates the difference of the spectral norm between prior and one-step look-ahead covariance matrices.
+

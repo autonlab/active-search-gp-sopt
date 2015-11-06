@@ -1,0 +1,12 @@
+# latex temp files
+/texts/*.aux
+/texts/*.bbl
+/texts/*.blg
+/texts/*.log
+/texts/*.synctex.gz
+/texts/*.dep
+/texts/*.out
+/texts/*.fdb_latexmk
+
+/texts/as_grf_sopt.pdf
+/texts/as_icmlalworkshop.pdf

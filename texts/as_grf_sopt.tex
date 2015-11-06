@@ -1,0 +1,265 @@
+% Sample LaTeX file for creating a paper in the Morgan Kaufmannn two
+% column, 8 1/2 by 11 inch proceedings format.
+
+\documentclass[]{article}
+\usepackage{times}
+\usepackage{proceed2e}
+\usepackage[round]{natbib}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage[linecolor=green!70!white, backgroundcolor=blue!20!white, bordercolor=red]{todonotes}
+\usepackage{soul}
+\usepackage{stmaryrd}
+\SetSymbolFont{stmry}{bold}{U}{stmry}{m}{n}
+\usepackage{nicefrac}
+\usepackage{cases}
+\usepackage{graphicx}
+\usepackage{subfigure}
+
+
+\usepackage{appendix}
+%
+% \newcounter{ppsubmain}
+% \newcounter{ppsubapp}
+% \newenvironment{insertappendices}{
+%   \setcounter{ppsubmain}{\arabic{subsection}}
+%   \begin{appendices}
+%   \setcounter{subsection}{\arabic{ppsubapp}}
+% }{
+%   \setcounter{ppsubapp}{\arabic{subsection}}
+%   \end{appendices}
+%   \setcounter{subsection}{\arabic{ppsubmain}}
+% }
+
+% \newcommand{\appref}[1]{\hyperref[#1]{Appendix~\ref{#1}}}
+% \newcommand{\algorithmautorefname}{Algorithm}
+
+\usepackage{tikz}
+
+\usetikzlibrary{shapes,positioning,automata}
+
+
+%\usepackage[T1]{fontenc}
+
+\newcommand\numberthis{\addtocounter{equation}{1}\tag{\theequation}}
+
+\makeatletter
+\newcommand\footnoteref[1]{\protected@xdef\@thefnmark{\ref{#1}}\@footnotemark}
+\makeatother
+
+
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{example}[theorem]{Example}
+\newtheorem*{example*}{Example}
+
+\newenvironment{definition}[1][Definition]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+
+\usepackage{url}
+% \usepackage{hyperref}
+
+\def\bx{\mathbf x}
+\def\bone{\mathbf 1}
+\def\bzero{\mathbf 0}
+\def\by{\mathbf y}
+\def\bk{\mathbf k}
+\def\bm{\mathbf m}
+\def\bV{\mathbf V}
+\def\bA{\mathbf A}
+\def\bI{\mathbf I}
+\def\bK{\mathbf K}
+\def\bQ{{\mathbf Q}}
+\def\bX{\mathbf X}
+\def\br{{\mathbf r}}
+\def\bD{{\mathbf D}}
+\def\bC{{\mathbf C}}
+\def\bb{{\mathbf b}}
+\newcommand{\be}{\mathbf{e}}
+\newcommand{\bE}{\mathbf{E}}
+
+\def\bdelta{\boldsymbol \delta}
+\def\balpha{\boldsymbol \alpha}
+\def\bmu{\boldsymbol \mu}
+\def\bLam{\boldsymbol \Lambda}
+
+\def\cLap{{\boldsymbol{\mathcal L}}}
+
+
+\DeclareMathOperator*{\argmax}{\arg\,\max}
+\DeclareMathOperator*{\argmin}{\arg\,\min}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\tr}{tr}
+%\DeclareMathOperator{\deg}{deg}
+
+
+\title{Active Search and Bandits on Graphs Using Sigma-Optimality}
+
+
+
+
+
+
+\author{ {\bf Yifei Ma} \\
+Machine Learning Department \\
+Carnegie Mellon University \\
+{\tt yifeim@cs.cmu.edu}
+\And
+{\bf Tzu-Kuo Huang\thanks{ \, Part of this work was done while the author was with Carnegie Mellon University. }}  \\
+Microsoft Research   \\
+{\tt tkhuang@microsoft.com } \\
+\And
+{\bf Jeff Schneider}   \\
+Robotics Institute \\
+Carnegie Mellon University \\
+{\tt schneide@cs.cmu.edu}
+}
+
+\begin{document}
+\maketitle
+
+\iffalse 
+
+Many modern information access problems involve highly complex
+patterns that cannot be handled by traditional keyword based search.
+Active Search is an emerging paradigm that helps users quickly find
+relevant information by efficiently collecting and learning from user
+feedback. We consider active search on graphs, where the nodes
+represent the set of instances users want to search over and the edges
+encode pairwise similarity among the instances. Existing active search
+algorithms are either short of theoretical guarantees or inadequate
+for graph data. Motivated by recent advances in active learning on
+graphs, namely the Sigma-optimality selection criterion, we propose
+new active search algorithms suitable for graphs with theoretical
+guarantees and demonstrate their effectiveness on several real-world
+datasets.
+
+We relate our active search setting to multi-armed bandits whose
+rewards are binary values indicating search hits or misses and arms
+cannot be pulled more than once. We also discussed theoretical
+guarantees for applying Sigma-optimality as the exploration term for
+bandits on graphs.
+
+
+
+\fi
+
+\begin{abstract}
+Many modern information access problems involve highly complex patterns that cannot be handled by traditional keyword based search.
+Active Search is an emerging paradigm that helps users quickly find relevant information by efficiently collecting and learning from 
+user feedback. We consider active search on graphs, where the nodes represent the set of instances users want to search over and 
+the edges encode pairwise similarity among the instances. Existing active search algorithms are either short of theoretical guarantees 
+or inadequate for graph data. Motivated by recent advances in active learning on graphs, namely the $\Sigma$-optimality 
+selection criterion, we propose new active search algorithms suitable for graphs with theoretical guarantees and demonstrate 
+their effectiveness on several real-world datasets. 
+
+We relate our active search setting to multi-armed bandits whose rewards are binary values indicating search hits or misses and arms cannot be pulled more than once. 
+We also discussed theoretical guarantees for applying $\Sigma$-optimality as the exploration term for bandits on graphs.%
+\footnote{An earlier version of this paper included results on bandit cumulative regrets with improved rates (originally Section 4.2.2).  These results depended on proof strategies from \cite{contal2014gaussian} (originally in Appendix C) which were found to be incorrect.  Therefore, these results have been removed in the current version of the paper.}
+
+%Many datasets are in the form of a graph where nodes are instances and edges are connections between instances; the instances can be classified into a few categories. 
+%When the node labels are unavailable and costly, we propose an algorithm to search for positive nodes with minimal labeling efforts by utilizing edge connections. 
+
+%Our solution is based on optimistic exploration which is also known as upper confidence bound (UCB) algorithms in multi-arm bandit literature. 
+%However, direct application of UCB will result in a trivial algorithm sampling only graph edges. 
+%Instead, we use a surrogate variance measure that considers the sum of top-k $\dotsc$. 
+%We show in theory that $\dotsc$. In empirical studies $\dotsc$.
+
+\end{abstract}
+
+\section{INTRODUCTION}
+\label{sec:intro}
+\input{sec1_introduction.tex}
+
+
+\section{RELATED WORK}
+\label{sec:related_work}
+\input{sec2_related_work.tex}
+
+%\citep{srinivas2012information,vanchinathanadaptively,valko2014spectral}.
+%Given a sequence of observations $\{(v_i,y_i)\}_{i=1}^t$, the standard
+%Gaussian Process posterior mean and covariance are
+%\subsection{Application to Graphs}
+\section{PROBLEM SETUP}
+\label{sec:problem_setup}
+\input{sec_gp_graph.tex}
+\section{METHOD}
+\label{sec:method}
+\input{sec_method.tex}
+\input{sec_discussions.tex}
+
+%\subsection{$\Sigma$-Optimality}
+%\cite{ma_2013} discussed an experiment design for 
+%\section{Active Search using $\Sigma$-Optimality}
+%We use the following kernel matrix 
+%\begin{equation}
+%	K := (L + \omega_0 I)^{-1},
+%	\label{eq:kernel}
+%\end{equation}	
+%where $\omega_0$ is a regularization parameter set to $|A|^{-1}$.
+	%\citep{GRF}.
+%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%
+%\subsection{Computation}
+\subsection{REGRET ANALYSIS}
+\label{sec:regret}
+\input{sec_regret_proof.tex}
+\section{EXPERIMENTS}
+\label{sec:exp}
+\input{sec_exp.tex}
+
+%%%%%%%%%%%%%%%
+\section{CONCLUSION AND DISCUSSIONS}
+\label{sec:conclude}
+
+In this paper, we discuss active search on a graph with known structure. Each node bears a reward, which is unknown at first but can be noisily observed upon query. 
+An active search algorithm aims to accumulate as large a sum of rewards from the queried nodes as possible under limited budgets. 
+We assume that the node rewards vary smoothly along the graph.
+
+Popular Bayesian UCB-style algorithms \citep{srinivas2012information,vanchinathanadaptively,valko2014spectral}
+use the marginal standard deviation as their exploration criterion, leading to the undesirable tendency
+of selecting peripheral nodes on a graph. Instead, we consider 
+$\Sigma$-optimality on graphs, which can more efficiently reduce the variance of the reward function estimate by 
+sampling cluster centers. We show the advantage of our method in experiments with real graphs and 
+provide a theoretical guarantee on the cumulative regret.
+
+
+One interesting future direction is deriving tighter regret bounds for the proposed methods that match their empirical performances. 
+%Our earlier version contained a theoretical result with better rates; unfortunately it was found to be incorrect because it used proof strategies from \cite{contal2014gaussian} that contained mistakes.
+We imagine it may be possible to bound the regret directly by the difference in $\Sigma$-optimality (Bayes survey risks, $\mathcal{R}^{\Sigma}$), which may have better properties than differential information gain, $\gamma_T$ on graphs.
+
+An equally interesting question is the selection of graph kernels. Our discussions and experiments mainly consider Gaussian random fields with unnormalized Laplacian, which is a very popular kernel choice. 
+It is worthwhile to 
+%Different kernels and regularizations may result in different performances of the same algorithm. 
+explore active search with other graph kernels, such as the ones discussed in \cite{SmolaK03}.
+
+
+\subsubsection*{Acknowledgement}
+This work was funded in part by DARPA grant FA87501220324.
+
+\appendix
+
+%\input{appendix_spectral_ucb_equivalence.tex}
+% \input{appendix_covariance_nonnegative.tex}
+\input{appendix_properties.tex}
+%\input{appendix_better_proofs.tex}
+\input{appendix_proof_as_regret.tex}
+% \input{appendix_Cprime_opt_regret.tex}
+%\input{appendix_proof_opt_regret.tex}
+
+
+\renewcommand\bibsection{\subsubsection*{References}}
+\bibliographystyle{plainnat}
+\bibliography{myrefs}
+
+
+
+
+\end{document}

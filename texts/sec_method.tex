@@ -1,0 +1,509 @@
+% !TEX root = as_grf_sopt.tex
+\newcommand{\bOmega}{\boldsymbol{\Omega}}
+\newcommand{\bH}{\mathbf{H}}
+\newcommand{\bq}{\mathbf{q}}
+%\newcommand{\rhos}{\rho^{\frac{1}{2}}}
+\newcommand{\rhos}{\rho}
+\newcommand{\cC}{\mathcal{C}}
+\newcommand{\blambda}{\boldsymbol{\lambda}}
+%%%%%%%%%%%
+
+\newcommand{\COMMENTEQ}[2][4.5em]{%
+  \leavevmode\hfill\makebox[#1][l]{//~#2}}
+
+
+
+\begin{algorithm}[ht]
+	\caption{ \textsc{gp-sopt} and its variants}
+	\label{alg:main}
+	\begin{algorithmic}[1]
+  	\INPUT $\mu_0$, $\bA$, $\omega_0$, $\sigma_n$, $\alpha_t$, $T$;
+  	if warm start, $\{v_\tau,y(v_\tau)\}_{\tau=1}^{t_0}$
+	\STATE Obtain initial $\mathcal{N}(\bmu_{0},\bC_{0})$ 
+		\COMMENTEQ{\eqref{eq:generative}}
+
+	\FOR{$t = t_0, \ldots, T-1,$}
+
+ 	\STATE Update to posterior $\mathcal{N}(\bmu_t, \bC_t)$ 
+ 		\COMMENTEQ{\eqref{eq:var_update}}
+
+ 	\STATE $v_{t+1} \leftarrow \argmax_{v \in V \setminus S_t} \mu_t(v) + \alpha_{t+1} s_t(v)$
+
+  		\hfill \makebox[5em][r]{// (\ref{eq:sopt.orig}, \ref{eq:sopt.tt}, or \ref{eq:sopt.topk})}
+ 		% \COMMENTEQ{(\ref{eq:sopt.orig}, \ref{eq:sopt.tt}, or \ref{eq:sopt.topk})}
+
+	\STATE Observe $y(v_{t+1})$; include $S_{t+1} \leftarrow S_t \cup \{v_{t+1}\}$
+	\ENDFOR
+	\OUTPUT $S_T$.
+	\end{algorithmic}
+\end{algorithm}
+%
+%\begin{tikzpicture}[every node/.style={draw=black,thick,circle,inner sep=0pt,minimum size=0.5cm, ellipse, align=center}]
+%
+%% start
+%\node [draw=none] (aa){};
+%\node [below right=3 and 3.5 of aa] (f) {$f(\cdot)$\\$f(v^*)$};
+%
+%\foreach \t [evaluate=\t as \tpo using int(\t+1)] in {0,...,3}{
+%
+%	% paras (t-1)
+%	\node [right=2*\t of aa] (p\t) {$\mu_{\t}(\cdot)$ \\ $c_{\t}(\cdot,\cdot)$};
+%
+%	% actions and obs (t)
+%	\node [below=.5 of p\t, fill=green!20] (v\tpo) {$v_{\tpo}$};
+%	\node [below=.5 of v\tpo, fill=gray!20] (y\tpo) {$y_{\tpo}\mid v_{\tpo}$};
+%
+%	\draw [-latex] (p\t) -- (v\tpo);
+%	\draw [-latex] (v\tpo) -- (y\tpo);
+%
+%	% obs
+%	\draw [-latex] (f) -- (y\tpo);
+%
+%	% reward
+%	\node [below=1.5 of y\tpo] (r\tpo) {$r_{\tpo}$};
+%	\draw [-latex] (f) -- (r\tpo);
+%	\draw [-latex] (v\tpo) to[out=-145, in=110, distance=1cm] (r\tpo);
+%
+%	\ifthenelse{\t>0}{
+%		\draw [-latex]	(y\t) -- (p\t);
+%	}{};
+%};
+%\end{tikzpicture}
+
+
+% \begin{algorithm}[h]
+	% \caption{General GP-style Active Search}
+	% \caption{\textsc{gp-sopt} active search and its variants}
+	% \label{alg:main}
+	% \begin{algorithmic}[1]
+	% \INPUT Adjacency matrix $\bA$, set of seed nodes $S_0$, query budget $T$, class imbalance prior $\mu_0$, regularization $\omega_0$ (default $0.01$), observation noise $\sigma_n$, and tuning parameters, $\alpha_t$.
+ %        \OUTPUT A set of $T$ selected nodes.
+ %   \STATE Compute augmented Laplacian $\widetilde{\cLap}_0:=\bD-\bA+\omega_0\bI$
+	% % \STATE Compute the prior covariance $\bC_0 = (\cLap + \omega_0\bI)^{-1}$. 
+	% \STATE Use $S_0$ to obtain the initial $\mathcal{N}(\bmu_{t_0},\bC_{t_0})$ by \eqref{eq:post_prec} or \eqref{eq:var_update}
+	% \FOR{$t = t_0 + 1, \ldots, T,$}
+	% \STATE Solve $v_t := \arg \max_{v \in V \setminus S_{t-1}} \mu_{t-1}(v) + \alpha_{t} s_{t-1}(v)$ with $s_{t-1}(v)$ defined via \eqref{eq:sopt.tt}, \eqref{eq:sopt.topk}, or \eqref{eq:sopt.orig}
+	% \STATE Query the label $y_t$ of $v_t$
+	% \STATE Update $\bmu_t$ and  $\bC_t$ by \eqref{eq:post_prec} or \eqref{eq:var_update}
+	% \STATE $S_t := S_{t-1} \cup \{v_t\}$
+	% \ENDFOR
+	% \STATE Return $S_T$.
+	% \end{algorithmic}
+% \end{algorithm}
+%%%%%%%%%%%
+Our proposed active search algorithms are described in Algorithm~\ref{alg:main}. 
+They resemble general exploration-exploitation style algorithms with GPs. 
+Here we focus on binary functions that assign value $1$ to relevant or target nodes, 
+and $0$ to all other nodes. 
+% The warm start seed nodes are assumed to be all relevant.  
+%Based on the posterior distribution of node labels, we consider a 
+At iteration $t+1$, Algorithm~\ref{alg:main} selects the next node to query
+based on a deterministic selection rule of the form: 
+\begin{equation}
+	\argmax_{v \in V \setminus S_t} \; \mu_{t}(v) + \alpha_{t+1} \cdot s_{t}(v),
+	\label{eq:acquisition}
+\end{equation}
+where $\mu_{t}(v)$ is the usual exploitation term and $s_{t}(v)$ encourages exploration, 
+with the two being balanced by a possibly iteration-dependent parameter $a_{t+1} > 0$.
+
+Examples from existing literature like 
+the popular GP-UCB algorithm and its extension to Active Search, GP-SELECT \citep{vanchinathanadaptively}, 
+amount to setting $s_{t}(v)^2 = \sigma_t(v)^2$, the posterior (as well as predictive) variance of the reward value at node $v$.
+Although this is a very reasonable choice in many situations, it may lead to undesirable exploration behaviors on graphs.
+Under our model assumption, low-degree nodes, which usually lie at the periphery of a graph, tend to have high predictive variances.
+Direct applications of GP-UCB may result in the selection of many such outliers, which fail to reveal much information
+about the reward values of most other nodes at the core of the graph  (Figure~\ref{fig:comparison:ucb}).
+
+
+\begin{figure*}[htb]
+\centering
+\subfigure[Choices from UCB]{
+\begin{tikzpicture}%[scale=0.7, transform shape]
+  \toyPlot
+  \foreach \x in {17,1,9,15,14} 
+    % GP_UCB(A,.3,label_toy_bin',struct('obs_sigma',1));
+    % kernel parameters: alpha, 0.300, omega0, 0.010, obs_sigma, 1.000, weight_scale, 1.000, k, Inf
+  { 
+    \node[draw=none, text=red] at (n\x){$\times$};
+    \foreach \y in \toytargets{ 
+       \ifthenelse{\x = \y}{\node[target] at (n\x){$\checkmark$};}{}
+  }
+  \node[ucb] at (n\x){};
+  }
+  \foreach \x in {1,...,17}
+  {
+    \node [draw=none, below right=.1*\nodeDist of n\x.center, inner sep=0pt, minimum size=2pt, opacity=.5, text opacity=1, fill=white, circle] {{\scriptsize{\x}}};
+  }
+\end{tikzpicture}
+\label{fig:comparison:ucb}
+}
+%
+$\qquad$
+\subfigure[Choices by our algorithm]{
+\begin{tikzpicture}%[scale=0.7, transform shape]
+  \toyPlot
+  \foreach \x in {7,14,2,10,5}
+    % GP_SOPT(A,.3,label_toy_bin',struct('obs_sigma',1));
+    % kernel parameters: alpha, 0.300, omega0, 0.010, obs_sigma, 1.000, weight_scale, 1.000, k, Inf
+  {
+  \node[draw=none, text=red] at (n\x){$\times$};
+   \foreach \y in \toytargets{ 
+     \ifthenelse{\x = \y}{\node[target] at (n\x){$\checkmark$};}{}
+  }
+  \node[sopt] at (n\x) {};
+  }
+  \foreach \x in {1,...,17}
+  {
+    \node [draw=none, below right=.1*\nodeDist of n\x.center, inner sep=0pt, minimum size=2pt, opacity=.5, text opacity=1, fill=white, circle] {{\scriptsize{\x}}};
+  }
+\end{tikzpicture}
+\label{fig:comparison:sopt}
+}
+\caption{For the toy graph example, choices from (a) direct application of UCB \citep{vanchinathanadaptively,valko2014spectral}  versus (b) our vanilla GP-SOPT. We observe that our method (b) tends to select more from cluster centers, which helps reduce variance of the unobserved values/rewards, whereas previous literature (a) tends to select the graph periphery.}
+\label{fig:comparison}
+\end{figure*}
+
+Intuitively, a good exploration criterion should favor nodes that have high influences on other parts of the graph.
+That is, the knowledge of the function values at these nodes should reveal a lot about the function values at other nodes.
+Under our model assumption, this principle naturally connects with the predictive covariances of a node with others. Research in active learning 
+on graphs has already made use of predictive covariances to construct better selection rules. \cite{mingji} 
+proposed to select nodes based on their sums of squares of predictive covariances with other nodes, which is derived 
+from the minimization of squared prediction error, known as V-optimality in experiment design. \cite{ma_2013} 
+observed that V-optimality can still be undesirably sensitive to outliers and used \textbf{$\Sigma$-optimality criterion} instead, 
+which by itself selects a set of nodes $\bv_t$ to minimize the following Bayes \textit{survey risk} on the posterior model after the selection, 
+\begin{equation*}
+	%\min_{\bv_t}
+	\mathcal{R}^\Sigma_{t\mid\bv_t} = \mathbb{E} \Biggl(
+	\sum_{v'\in\mathcal{V}} f_{t\mid\bv_t}(v') -
+	\sum_{v'\in\mathcal{V}} \mu_{t\mid\bv_t}(v') 
+	\Biggr)^2
+	=\bone^\top\bC_{t\mid\bv_t}\bone.
+\end{equation*}
+For active search, we use this criterion in a greedy sequential selection manner for exploration scoring, as
+\begin{align}
+  s_t(v) &= \sqrt{\mathcal{R}^\Sigma_{t\mid S_t} -	\mathcal{R}^\Sigma_{t+1\mid S_t\cup\{v\}} }
+  % \nonumber
+  % \\
+ %  & =  \bone^\top (\bC_{t\mid S_t} - \bC_{t+1\mid S_t\cup\{v\}}) \bone 
+ % \nonumber
+ % \\
+  % &
+  =	
+ 	\frac{ \sum_{v'} C_t(v,v')}{ \sqrt{C_t(v,v) + \sigma_n^2}}
+ 	\nonumber
+ 	\\
+ % 	&=
+ %  	\frac{\bc_t(v)^\top \bq_{t,(1)}}
+	% {\sqrt{\sigma_t(v)^2 + \sigma_n^2}}
+	%  \nonumber
+	%  \\
+	&= \frac{1}{\sqrt{1+\nicefrac{\sigma_n^2}{\sigma_t^2(v)}}}
+	\cdot
+	\sum_{v'\in V}\rho_t(v,v')\sigma_t(v'),
+	\label{eq:sopt}
+\end{align}
+where the second equality is easily derived from \eqref{eq:var_update}.
+If we ignore $\sigma_n$ (set it to $0$), the $\Sigma$-optimality criterion \eqref{eq:sopt} considers the sum 
+of a node's correlation times standard deviation of all nodes on the graph. High score nodes by this criterion are likely to provide rich
+information for exploration.
+
+We propose three exploitation-exploration style algorithms with  exploration criteria motivated by $\Sigma$-optimality, which are \emph{vanilla $\Sigma$-optimality} and its two variants with an additional parameter $k$ that we will describe next.
+All algorithms select the next node to query by the general rule \eqref{eq:acquisition}, but use different exploration terms:
+% 
+\stepcounter{equation}
+
+\textbf{GP-SOPT (Vanilla $\Sigma$-Optimality):} %Select the next node by \eqref{eq:acquisition}, where,
+\begin{equation}
+   % \eqref{eq:acquisition}, \quad \mbox{where }\;
+	s_t(v) 
+	=
+		\frac{1}{\sqrt{1+\nicefrac{\sigma_n^2}{\sigma_t^2(v)}}}
+	\cdot
+	\sum_{v'\in V}\rho_t(v,v')\sigma_t(v').
+	\label{eq:sopt.orig} \tag{\theequation.a}
+\end{equation}
+
+
+% The first 
+% two are variants of \eqref{eq:sopt} with an additional parameter $k$ that we will describe next:
+
+\textbf{GP-SOPT.TT (Thresholded Total Covariance):} %Select the next node by \eqref{eq:acquisition}, where,
+		\begin{equation}
+			s_{t}(v) = \min\Biggl(k \sigma_{t}(v), 
+			% \sum_{v' \in V}\frac{C_{t}(v,v')}{\sigma_{t}(v)} 
+			\sum_{v'\in V}\rho_t(v,v')\sigma_t(v')
+			\Biggr).
+			\label{eq:sopt.tt} \tag{\theequation.b}
+		\end{equation}
+\textbf{GP-SOPT.TOPK (Top-$k$ Covariance):} %Select the next node by \eqref{eq:acquisition}, where,
+		\begin{equation}
+			s_{t}(v) := \max_{B \subset V, |B| = k} 
+			% \sum_{v' \in B} \frac{C_{t}(v,v')}{\sigma_{t}(v)}.
+			\sum_{v' \in B} \rho_{t}(v,v')\sigma_{t}(v').
+			\label{eq:sopt.topk} \tag{\theequation.c}
+		\end{equation}
+
+As one can see in Figure~\ref{fig:comparison:sopt}, the nodes selected by vanilla GP-SOPT indeed reside in more central parts of the toy graph than the nodes selected by its competitor. In a large graph with many peripheral nodes, we believe that the improved exploration criteria of GP-SOPT and its variants contribute to a better recall rate of search targets in real graphs in Section~\ref{sec:exp}.
+
+
+The reason we propose the latter two variants, \eqref{eq:sopt.tt} and \eqref{eq:sopt.topk}, is to both address proof difficulties and increase practical robustness. By Lemma \ref{lemma:nnC} in Appendix \ref{sec:appendix:cov}, we have that $s_t(v) \geq \sigma_t(v)$ for both criteria, 
+meaning that $s_t(v)$ maintains the UCB property. 
+Note that the observation noise, $\sigma_n$, is also dropped from \eqref{eq:sopt.tt} and \eqref{eq:sopt.topk}. 
+% There is no obvious difference when $\sigma_n$ is small. 
+% Note that if we keep the observation noise variance as in \eqref{eq:sopt}, this property might not always hold.
+As we will show in our theoretical analysis, we put a threshold in \eqref{eq:sopt.tt} against $k \sigma_t(v)$, where $k$ is a tuning parameter, 
+in order to explicitly control the regret of the algorithm. 
+As implied by Lemma \ref{lemma:nnC_sub} in Appendix \ref{sec:appendix:cov}, the Top-$k$ Covariance criterion \eqref{eq:sopt.topk}
+is also always upper-bounded by $k \sigma_t(v)$.  
+% Top-$k$ truncation only considers
+% a node's influence in its local neighborhood. 
+% We refer to \autoref{alg:main} combined with these two criteria as \textbf{GP-SOPT.TT} and \textbf{GP-SOPT.TOPK}, respectively.
+
+% As mentioned before, this criterion may not give an upper-confidence bound due to 
+% the observation noise variance. However, using analysis techniques recently proposed by \cite{contal2014gaussian},
+% we are able to derive some theoretical guarantees regarding the \textit{optimization regret} of algorithms 
+% using this criterion. More generally, our analysis suggests a connection between the variance minimization principle
+% in active learning and optimization regret in the bandit setting. We refer to \autoref{alg:main} combined with this criterion
+% as \textbf{GP-SOPT}.
+
+In the next two subsections we discuss in more details the properties of various exploration criteria, 
+and present our theoretical analysis.
+
+%\textbf{The exploration heuristic} we propose, in its most general form, is the one-step look-ahead improvement of a non-increasing spectral function on the sorted eigen-values of the covariance matrix. Let $\bC_t$ be the covariance matrix with decreasingly sorted eigen-values $\blambda_t^2= (\lambda_{t,(1)}^2, \dotsc, \lambda_{t,(n)}^2)^\top$, the spectral function is then defined as,
+%\begin{align}
+%	\rho(\bC_t) &= \sum_{j=1}^n h(\lambda_{t,(j)}),
+%	\quad {\rm s.t.} \; 
+%	h'(s)>0, \forall s>0.
+%\end{align}
+%Correspondingly, assuming an observation of $v$, the exploration heuristic is then,
+%\begin{align}
+%	s_t(v) = 
+%	g\left( 
+%	\sum_{k=1}^n h\Bigl(\lambda_{t,(j)}\Bigr)
+%	-
+%	\sum_{k=1}^n h\Bigl(\lambda_{t+1,(j)}\Bigr) 
+%	\right)
+%	,
+%\end{align}
+%where $g=h^{-1}$ is the inverse function. The difference in side $g(\cdot)$ is nonnegative because for inference on Gaussian models, $\lambda_{t+1,(j)} < \lambda_{t(j)}$. 
+%
+%For example, some reasonable choices of $s_t(v)$ are,
+%\begin{numcases}{\hspace{-2em}}
+%	\sqrt{ 1+\nicefrac{\sigma_t^2(v)}{\sigma_n^2}}
+%	 & $h_{ig}(s) = -log(s)$
+%	   \label{eq:s-ig}
+%	\\	   
+%	 \sqrt{\tr(\bC_{t}) - \tr(\bC_{t+1})},
+%	   & $h_2(s) = s^2$
+%	   \label{eq:s-variance}
+%	\\
+%	 \lambda_{\max}(\bC_{t}) - \lambda_{\max}(\bC_{t+1}),
+%	 \hspace{-1em}
+%	 & $h_\infty(s) = s^p, p\to\infty$
+%	   \label{eq:s-spectral}
+%\end{numcases}
+%
+%We promote the last heuristic, \eqref{eq:s-spectral}, over others, for the following reasons. Alternative \eqref{eq:s-ig}, which adds biases to maximize the differential information gain of the joint distribution of node values, turns out to pay too much attention to the graph periphery, which actually prevents information gathering in the true problem against intuition. More precisely, differential entropy is sensitive to tails of the distribution, which happens to be the place of the biggest model mismatch of our \textsc{grf} models. In fact, selecting nodes using \eqref{eq:s-ig} result in an almost linear trend in the growth of differential information gain.
+%
+%
+%The other alternative, \eqref{eq:s-variance}, alleviates the situation by adding independence assumptions on the nodes and measure the sum of the marginal variances. However, it does not completely solve the issue that nodes preferred occur more often in graph periphery. An intuition is ... ???
+%
+%Finally, we apply \eqref{eq:s-spectral}, which aims to globally control the posterior marginal variances of every node, by upper-bounding them by $\lambda_{\max}^2$. 
+%%
+%	Indeed,  for any node $k$ and any covariance matrix $\bC$,
+%	\begin{equation}
+%	C_{kk}=\be_k^\top \bC \be_k \leq \max \nicefrac{\bv^\top\bC\bv}{\bv^\top\bv} = \lambda_{\max}^2(\bC).
+%	\end{equation}
+%
+%Define $\rho_t = \lambda_{\max}(\bC_t)$ and $\rho_{t+1}(v) =  \lambda_{\max}(\bC_{t+1}\mid v)$; the ideal objective we consider then takes the form,
+%\begin{equation}
+%	s_t^0(v) = s_t(v) =  \rhos_t - \rhos_{t+1}(v).
+%	\label{eq:criterion0}
+%\end{equation}
+%%which still needs some approximations before real implementation.
+%
+%\subsection{Approximate Spectral Norm Decreases}
+%
+%First, we linearly approximate \eqref{eq:criterion0}, by computing its gradient, 
+%\begin{align}
+%	\frac{(\bq_{t+1}^\top \bc_{t+1}(v))^2}{c_{t+1}(v,v)^2+\sigma_n^2}
+%	\leq
+%	\rho_t^2 - \rho_{t+1}^2|_v 
+%	\leq 
+%	\frac{(\bq_t^\top \bc_t(v))^2}{c_t(v,v)^2+\sigma_n^2}
+%\end{align}
+%
+%Then, we seek approximations by realizing $\bC_t$ as a kernel in \textsc{grf} model. With, ??some analysis??, the principal component of the prior kernel $\bC_0$ is close to a vector of all ones, 
+%\begin{equation}
+%	\bq_0 \approx \mathbf{1},
+%\end{equation}
+%which allows an easy computation of what we call \textbf{$\Sigma$-Optimality}.
+%\begin{align*}
+%%	&\lambda^2_{\max}(\bC_{t+1}) \approx \lambda^2_{\max}(\bC_t) - \mathbf{1}^\top \bc_0(v) (\sigma_0^2(v) + \sigma_n^2) \bc_0(v)^\top \mathbf{1}
+%	&\rhos_{1}^2(v) \approx \rhos_{0}^2 - \frac{\left(\mathbf{1}^\top \bc_0(v)\right)^2}
+%	{ (\sigma_0^2(v) + \sigma_n^2) }
+%	\\
+%	&s_0(v) \approx \frac{1}{2\rhos_0}
+%	\frac{\bc_0(v)^\top \mathbf{1}}
+%	{\sqrt{\sigma_0(v)^2 + \sigma_n^2}}
+%\end{align*}
+%
+%In fact, this approximation can be valid for relatively large $t$. Further breaking the graph down to different (relatively isolated) connected components, where each individual component is relatively unexplored, and therefore its corresponding eigen-vector will be close to an indicator vector of ones on the nodes inside this component, which we call $\bq_{t,c}\approx\mathbf{1}_\cC$, where $c$ and $\cC$ are the index and subset of nodes of this connected component. The more under-explored that the component $c$ is, the more likely that $\bq_{t,c}$ becomes the principal eigen-vector, $\bq_t$, and simultaneously that $\bq_{t,c}$ gets close to $\mathbf{1}_\cC$.
+%
+%In the meantime, every column on the current covariance matrix $\bc_t(v)$ will also reflect independence between these (relatively isolated) components. Thus, the inner product can be roughly approximated as, 
+%\begin{equation}
+%	\bq_t^\top \bc_t(v) \approx \mathbf{1}_\cC^\top \bc_t(v)  + \mathbf{1}_{\bar{\cC}}^\top \mathbf{0} = \mathbf{1}^\top \bc_t(v),
+%\end{equation}
+%where $\bar{\cC}$ is the complement of $\cC$.  
+%
+%\begin{remark}
+%	connection to survey problem.
+%\end{remark}
+%
+%\subsection{Sigma-Optimality and Beyond}
+%	 
+%%
+%%
+%%\begin{lemma}[Trace Average]
+%%	\label{lem:computation}
+%%	With $h_1(s) = s^2$, the following holds,
+%%	\begin{align*}
+%%		s_t(v) = \sqrt{\frac{\sum_{v'}C_t(v,v')^2}{C_t(v,v) + \sigma_n^2} }
+%%		\geq
+%%		\frac{C_t(v,v)}{\sqrt{C_t(v,v) + \sigma_n^2}} 
+%%	\end{align*}
+%%%	
+%%%	Let $\bq_t$, $\bq_{t+1}$ be the eigen-vector corresponding to the largest eigen-value of $\rho^2(\bC_t)$ and $\rho^2(\bC_{t+1}\mid v)$, respectively, the eigen-values satisfies the following, 
+%%%	\begin{align}
+%%%		\frac{(\bq_{t+1}^\top \bc_{t+1}(v))^2}{c_{t+1}(v,v)^2+\sigma_n^2}
+%%%		\leq
+%%%		\rho_t^2 - \rho_{t+1}^2|_v 
+%%%		\leq 
+%%%		\frac{(\bq_t^\top \bc_t(v))^2}{c_t(v,v)^2+\sigma_n^2}
+%%%	\end{align}
+%%\end{lemma}
+%
+%
+%
+%%\begin{lemma}[Trace for Average]
+%%	\label{lem:computation}
+%%	Let $\bq_t$, $\bq_{t+1}$ be the eigen-vector corresponding to the largest eigen-value of $\rho^2(\bC_t)$ and $\rho^2(\bC_{t+1}\mid v)$, respectively, the eigen-values satisfies the following, 
+%%	\begin{align}
+%%		\frac{(\bq_{t+1}^\top \bc_{t+1}(v))^2}{c_{t+1}(v,v)^2+\sigma_n^2}
+%%		\leq
+%%		\rho_t^2 - \rho_{t+1}^2|_v 
+%%		\leq 
+%%		\frac{(\bq_t^\top \bc_t(v))^2}{c_t(v,v)^2+\sigma_n^2}
+%%	\end{align}
+%%\end{lemma}
+%%
+%
+%%\begin{lemma}[Spectral for Control]
+%%	\label{lem:robustness}
+%%	With $h_1(s) = s^\infty$,
+%%	$C_{kk}\leq\rho^2(\bC)$ holds for any marginal variance of $\bff\sim\mathcal{N}(\bmu, \bC)$.
+%%\end{lemma}
+%%	Indeed,  $C_{kk}=\be_k^\top \bC \be_k \leq \max \nicefrac{\bv^\top\bC\bv}{\bv^\top\bv} = \rho^2(\bC)$. \qed 
+%
+%%\subsection{Theoretical Properties}
+%%
+%%\subsection{Numerical Applications}
+%
+%
+%%\todo[inline]{stuck here, because $\sigma_t^2(v)$ may be irrelevant to $s_t$?}
+%
+%
+%\subsection{Properties}
+%
+%
+%%%%%%%%%%%%%
+%\begin{lemma}
+%\label{lemma:nnC}	
+%	For connected graph Laplacian, $\bK=\cLap+\bOmega$, the posterior covariance matrix, $\bC_t$, is nonnegative element-wise. 
+%\end{lemma}%
+%%%%%%%%%%%%%
+%\begin{proof}
+%	The posterior precision matrix for conjugate multivariate normal prior and likelihood pairs is additive. As the observations involve only one coordinate, $v_t$, at a time, the precision matrix of the likelihood model is diagonal. Let $h_k = \sum_{\tau=1}^t \llbracket v_\tau=v_k \rrbracket$ to be the count of queries on node $k$, further define its diagonal matrix, $\bH = \diag(h_1,\dotsc,h_n)$.
+%	\begin{align}
+%		(\bC_t)^{-1} = \bK^{-1} + \sigma_n^{-2}\bH
+%		= \bD - \bA + \bOmega + \sigma_n^{-2}\bH.
+%		\label{eq:precision}
+%	\end{align}
+%	Define $\bD_t = \bD + \bOmega + \sigma_n^{-2}\bH$,
+%	we have
+%	\begin{align*}
+%		\bC_t = (\bD_t - \bA)^{-1}
+%		=
+%		\bD_t^{-\frac{1}{2}}
+%		\left(\sum_{k=0}^\infty \left(\bD_t^{-\frac{1}{2}}\bA\bD_t^{-\frac{1}{2}}\right)^k \right)
+%		\bD_t^{-\frac{1}{2}}, 
+%	\end{align*}
+%	where convergence is because $\|\bD_t^{-\frac{1}{2}} \bA \bD_t^{-\frac{1}{2}}\|_2 < 1$ (details in Appendix~\ref{app:sec:nnC}). Notice the right hand side is always nonnegative.
+%\end{proof}
+%
+%%%%%%%%%%%%%
+%\begin{remark}
+%	Notice that Lemma~\ref{lemma:nnC} also applies to normalized graph Laplacians, when because the counterpart of \eqref{eq:precision} allows a similar derivation,
+%	\begin{align*}
+%		\widetilde{\bC}_t 
+%		&= 
+%		\left( \widetilde{\cLap} +
+%		\widetilde{\bOmega} + \sigma_n^{-2}\bH
+%		\right)^{-1} 
+%		\numberthis
+%		\label{eq:nnC_normalized}
+%		\\
+%%		&=
+%%		\bD^{\frac{1}{2}}
+%%		\left( \bD - \bA 
+%%		+ \widetilde{\bOmega}\bD + \sigma_n^{-2}\bH\bD
+%%		\right)^{-1}
+%%		\bD^{\frac{1}{2}},
+%%		\\
+%		&=
+%		\bD^{\frac{1}{2}}
+%		\widetilde{\bD}^{-\frac{1}{2}}
+%		\left( \sum_{k=0}^\infty \left(
+%			\widetilde{\bD}_t^{-\frac{1}{2}} 
+%			\bA
+%			\widetilde{\bD}_t^{-\frac{1}{2}} 
+%		\right)^k
+%		\right)^{-1}
+%		\widetilde{\bD}^{-\frac{1}{2}}
+%		\bD^{\frac{1}{2}},
+%	\end{align*}
+%	when the counterpart of $\bD_t$ is defined as,
+%	\begin{equation}
+%		\widetilde{\bD}_t = \bD + \widetilde{\bOmega}\bD + \sigma_n^{-2}\bH\bD.
+%	\end{equation}
+%	Generally we require $\sigma_n > 0$, but it is not necessary for submatrix of covariance matrix on unqueried nodes (more in Appendix~\ref{app:sec:nnC}).
+%\end{remark}
+%
+%
+%%%%%%%%%%%%%%
+%
+%\begin{lemma}
+%If  prior is defined with respect to an unnormalized graph Laplacian, we have for any $t$ and $(v,v')$ pair, 
+%\begin{equation}
+%	C_t(v,v) \geq C_t(v,v'),
+%\end{equation}
+%which essentially means $\sigma_t(v) \geq \rho_t(v,v')\sigma_t(v'), \forall v'$.
+%\end{lemma}
+%
+%\begin{proof}
+%	It is really simple with spring analogy, but I have to find out how to translate it to words. There should not be restrictions of the form $v\not\in S_t$.
+%\end{proof}
+%
+%\begin{remark}
+%	We can unify bounds with both normalized and unnormalized graph Laplacians, by also considering \eqref{eq:nnC_normalized}, as,
+%	\begin{equation}
+%	\sigma_t(v) \leq s_{t,k}(v) \leq k\sqrt{d_{\max}}\sigma_t(v),
+%%		\sqrt{d_{\max}}\tilde{\sigma}_t(v) 
+%%		\geq 
+%%		\tilde{\rho}_t(v,v') \tilde{\sigma}_t(v'), \forall v',
+%	\end{equation}
+%	where $d_{\max}$ is the maximal degree on the graph.%
+%\footnote{Maybe this suggests that we shouldn't use normalized/unnormalized Laplacian??}
+%\end{remark}
+
+%%%%%%%%%%%%

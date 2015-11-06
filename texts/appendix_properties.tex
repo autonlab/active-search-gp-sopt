@@ -1,0 +1,237 @@
+% !TEX root = as_grf_sopt.tex
+
+% \begin{appendices}
+
+
+\section{Predictive Covariance Matrix}
+\label{sec:appendix:cov}
+
+   
+   
+   
+   
+%%%%%%%%%%%%
+\begin{lemma}
+\label{lemma:nnC} 
+  For augmented graph Laplacian, %$\bC=(\cLap+\omega_0\bI)$,
+  the posterior covariance matrix, $C_t(v,v')\geq0, \forall v, v'$.
+\end{lemma}%
+\begin{proof}
+  Let $h_k = \sum_{\tau=1}^t e_{v_\tau}(v_k)$ to be the count of queries on node $k$; further define its diagonal matrix, $\bH = \diag(h_1,\dotsc,h_n)$. 
+  We rewrite \eqref{eq:post_prec} as, %The conjugate inference model in term of the precision matrix is,
+\begin{equation*}
+    (\bC_t)^{-1} = (\bC_0)^{-1} + \sigma_n^{-2}\bH
+    = \bD - \bA + \omega_0\bI + \sigma_n^{-2}\bH
+  \end{equation*}
+  Define $\bD_t = \bD + \omega_0\bI + \sigma_n^{-2}\bH$,
+  we have
+  \begin{align*}
+    \bC_t = (\bD_t - \bA)^{-1}
+    =
+    \bD_t^{-\frac{1}{2}}
+    \left(\sum_{k=0}^\infty \left(\bD_t^{-\frac{1}{2}}\bA\bD_t^{-\frac{1}{2}}\right)^k \right)
+    \bD_t^{-\frac{1}{2}}, 
+  \end{align*}
+where the right hand side is always nonnegative.
+
+%%%%%%%%%%%%%
+The convergence of $\|\bD_t^{-\frac{1}{2}} \bA \bD_t^{-\frac{1}{2}}\|_2 < 1$ is as follows.
+%Assume $\sigma_n^2>0$, show  $\|\bD_t^{-\frac{1}{2}} \bA \bD_t^{-\frac{1}{2}}\|_2 < 1$.
+
+Define the components for the posterior as $\bD_t = \diag(d_1^{(t)}, \dotsc, d_n^{(t)}$ with $d^{(t)} = \sum_{i=1}^n d_i^{(t)}$. Also, define for the prior model $\bD = \diag(d_1^{(0)}, \dotsc, d_n^{(0)}$ with $d^{(0)} = \sum_{i=1}^n d_i^{(0)}$.
+
+The following holds for any $\bv\in\mathbb{R}^n$,
+\begin{align*}
+	&\quad \bv^\top \bD_t^{-\frac{1}{2}} \bA \bD_t^{-\frac{1}{2}} \bv 
+	= \sum_{ij}\frac{v_i v_j a_{ij}}{\sqrt{d^{(t)}_i}\sqrt{d^{(t)}_j}}
+	\\
+	&\leq 
+	\sqrt{
+		\left(  \sum_{ij} \frac{v_i^2 a_{ij}}{d^{(t)}_i}  \right)
+		\left(  \sum_{ij} \frac{v_j^2 a_{ij}}{d^{(t)}_j}  \right)
+	}
+	=\sum_i v_i^2 \frac{d_i}{d^{(t)}_i}
+	\leq \|\bv\|_2^2.
+\end{align*}
+
+Further, both equalities cannot hold simultaneously, because for the first equality to hold, it is required that $\frac{v_i^2a_{ij}}{d_i^{(t)}} \propto \frac{v_j^2a_{ij}}{d_j^{(t)}}$, i.e., $v_j^2 \propto d_j^{(t)}, \forall j$ in the same connected component, which then dictates that,
+\begin{align*}
+	\sum_i v_i^2 \frac{d_i}{d^{(t)}_i} 
+	= \sum_i \left( \frac{d_i^{(t)}}{d^{(t)}} \|\bv\|_2^2\right) \frac{d_i}{d^{(t)}_i}
+	= \frac{ d^{(0)} }{ d^{(t)} }\|\bv\|_2^2 
+	<\|\bv\|_2^2.
+\end{align*}
+\end{proof}
+
+
+%
+%%%%%%%%%%%%%
+%\begin{remark}
+% Notice that Lemma~\ref{lemma:nnC} also applies to normalized graph Laplacians, when because the counterpart of \eqref{eq:precision} allows a similar derivation,
+% \begin{align*}
+%   \widetilde{\bC}_t 
+%   &= 
+%   \left( \widetilde{\cLap} +
+%   \widetilde{\bOmega} + \sigma_n^{-2}\bH
+%   \right)^{-1} 
+%   \numberthis
+%   \label{eq:nnC_normalized}
+%   \\
+%%    &=
+%%    \bD^{\frac{1}{2}}
+%%    \left( \bD - \bA 
+%%    + \widetilde{\bOmega}\bD + \sigma_n^{-2}\bH\bD
+%%    \right)^{-1}
+%%    \bD^{\frac{1}{2}},
+%%    \\
+%   &=
+%   \bD^{\frac{1}{2}}
+%   \widetilde{\bD}^{-\frac{1}{2}}
+%   \left( \sum_{k=0}^\infty \left(
+%     \widetilde{\bD}_t^{-\frac{1}{2}} 
+%     \bA
+%     \widetilde{\bD}_t^{-\frac{1}{2}} 
+%   \right)^k
+%   \right)^{-1}
+%   \widetilde{\bD}^{-\frac{1}{2}}
+%   \bD^{\frac{1}{2}},
+% \end{align*}
+% when the counterpart of $\bD_t$ is defined as,
+% \begin{equation}
+%   \widetilde{\bD}_t = \bD + \widetilde{\bOmega}\bD + \sigma_n^{-2}\bH\bD.
+% \end{equation}
+% Generally we require $\sigma_n > 0$, but it is not necessary for submatrix of covariance matrix on unqueried nodes (more in Appendix~\ref{app:sec:nnC}).
+%\end{remark}
+%
+
+%%%%%%%%%%%%%
+
+%\begin{lemma}
+%If  prior is defined with respect to an unnormalized graph Laplacian, we have for any $t$ and $(v,v')$ pair, 
+%\begin{equation}
+%  C_t(v,v) \geq C_t(v,v'),
+%\end{equation}
+%which essentially means $\sigma_t(v) \geq \rho_t(v,v')\sigma_t(v'), \forall v'$.
+%\end{lemma}%
+%%%%%%%%%%%%%%%%
+%
+%We can use spring analogy in spectral graph models, which assumes that the nodes are physical particles that can move vertically. Two particles $v,v'$, are connected with springs of strength $A(v,v')$, if the weight is nonnegative. Every node is also connected to a reference point (assuming that to be of level zero) with spring of strength $\omega_0+\frac{h_v}{\sigma_n^2}$. 
+%  
+%  In this analogy, the displacement of a node $v$ in height by applying unit form is proportional to $C(v,v)$, whereas the vertical displacement of another node $v'$  by applying unit force on node $v$ is $C(v,v')$. For a trivial example, imagine $A=0$ and displacement, inversely related to the spring strength, is exactly $(\omega_0+\frac{h_v}{\sigma_n^2})^{-1}$. From physical models, we can observe that the displacement of any other node is always smaller than self-displacement, when force is applied. 
+%\end{proof}
+
+\begin{lemma}
+\label{lemma:nnC_sub}	
+The diagonal elements in $\bC_t$ is always no smaller than the off-diagonal elements, i.e., $\sigma_t(v)^2 = C_t(v,v)\geq C_t(v,v'), \forall v,v'$.
+% Let $C$ denote the posterior covariance conditioned on a set $S$ of nodes. For any $U \subset V \setminus S$, we have
+% that $C_{U,U}$ is non-negative elementwise.
+\end{lemma}
+
+
+\newcommand{\bbv}{\bar{\bv}}
+\newcommand{\bell}{\boldsymbol{\ell}}
+
+\begin{proof}
+	Without loss of generality, let $v$ be the last index of $\bC_t=(\widetilde{\cLap}_0 + \sigma_n^{-2}\bH)^{-1}$. For simplicity, let $\widetilde{\cLap}_t = \widetilde{\cLap}_0 + \sigma_n^{-2}\bH$ and it has the following matrix partition,
+	\begin{equation*}
+		\widetilde{\cLap}_t
+		= \begin{pmatrix}
+			\widetilde{\cLap}_{\bbv \bbv} & \tilde{\bell}_{\bbv v}
+			\\
+			\tilde{\bell}_{\bbv v}^\top & \tilde{\ell}_{vv}
+		\end{pmatrix},
+	\end{equation*}
+	where $\bbv$ is the complement of $v$.
+	From Woodbury matrix inversion lemma, we have
+	\begin{equation}
+		\bC_t = \widetilde{\cLap}_t^{-1}
+		= \begin{pmatrix}
+			\mathbf{M}
+			 &
+			-\frac{1}{m}
+			\widetilde{\cLap}_{\bbv\bbv}^{-1} \tilde{\bell}_{\bbv v}
+			\\
+			-\frac{1}{m}
+			\tilde{\bell}_{\bbv v}^\top \widetilde{\cLap}_{\bbv\bbv}^{-1}
+			&
+			\frac{1}{m}
+		\end{pmatrix},	
+	\end{equation}
+	where $m=\tilde{\ell}_{vv} - \tilde{\bell}_{\bbv v}^\top \widetilde{\cLap}_{\bbv\bbv}^{-1} \tilde{\bell}_{\bbv v} $
+	and $\mathbf{M}=
+			 \widetilde{\cLap}_{\bbv\bbv}^{-1}+\frac{1}{m} 
+			 \widetilde{\cLap}_{\bbv\bbv}^{-1} \tilde{\bell}_{\bbv v}
+			 \tilde{\bell}_{\bbv v}^\top \widetilde{\cLap}_{\bbv\bbv}^{-1}
+	$.
+	To show that $C_t(v,v)\geq C_t(v,v')$, we need to verify that 
+$
+	(			-\widetilde{\cLap}_{\bbv\bbv}^{-1} \tilde{\bell}_{\bbv v}
+)_{v'}\leq1.
+$
+
+	In fact, since $\widetilde{\cLap}_t
+	%=\widetilde{\cLap}_0+\sigma^{-2}\bH
+	$ is diagonally dominant, we have
+	$\widetilde{\cLap}_t \bone_n\geq0.
+	$
+	Take its first $n-1$ rows to get
+	$
+		\widetilde{\cLap}_{\bbv \bbv}\cdot \bone_{n-1} +
+		\tilde{\bell}_{\bbv v} \geq 0.
+	$
+	Notice $\widetilde{\cLap}_{\bbv \bbv}$ is also a valid augmented graph Laplacian. By Lemma \ref{lemma:nnC}, we could left multiply the element-wise nonnegative matrix $\widetilde{\cLap}_{\bbv \bbv}^{-1}$ to both sides to obtain,
+$		\bone_{n-1} +
+		\widetilde{\cLap}_{\bbv \bbv}^{-1}\tilde{\bell}_{\bbv v} \geq 0,
+$
+	which completes our proof for any $v'\in \bbv$.
+\end{proof}
+
+% \begin{proof}
+% 	Let $\tilde{L} := L + \omega_0 I$.
+% Suppose the prior covariance matrix decomposes into,
+% \begin{equation}
+% 	K \;=\; 
+% 	\begin{bmatrix}
+% 		\tilde{L}_{S,S}  & \tilde{L}_{S,U} \\
+% 		\tilde{L}_{U,S} & \tilde{L}_{U,U}
+% 	\end{bmatrix}^{-1}.
+% \end{equation}
+% Schur complement then gives
+% \begin{align}
+% 	K_{S,S} &= (\tilde{L}_{S,S} - \tilde{L}_{S,U} (\tilde{L}_{U,U})^{-1}\tilde{L}_{U,S})^{-1},\\
+% 	K_{U,U} &= (\tilde{L}_{U,U})^{-1}( I + \tilde{L}_{U,S} K_{S,S} \tilde{L}_{S,U} (\tilde{L}_{U,U})^{-1}),\\
+% 	K_{S,U} &= -K_{S,S} \tilde{L}_{S,U} (\tilde{L}_{U,U})^{-1}.
+% \end{align}
+% By conjugate inference formula, we have
+% \begin{align}
+% 	C_{S,S} &= K_{S,S} - K_{S,S}(K_{S,S}+\sigma^2 I)^{-1}K_{S,S}\\
+%                 &= (\sigma^{-2}I + K_{S,S}^{-1})^{-1}\\
+% 			      & = (\tilde{L}_{S,S} + \sigma^{-2} I- \tilde{L}_{S,U} (\tilde{L}_{U,U})^{-1}\tilde{L}_{U,S})^{-1}, \label{eq:C_SS}\\
+% 	C_{U,U} 
+% 	&= K_{U,U} - K_{U,S}(K_{S,S} + \sigma^2 I)^{-1} K_{S,U}\\
+% 	&= (\tilde{L}_{U,U})^{-1}(I + \tilde{L}_{U,S}C_{S,S}\tilde{L}_{S,U}(\tilde{L}_{U,U})^{-1}).
+% \end{align}
+% Plugging \eqref{eq:C_SS} into \eqref{eq:C_UU} and applying the matrix inversion lemma, we get
+% \begin{equation}
+% 	C_{U,U} = (\tilde{L}_{U,U} - \tilde{L}_{U,S}(\tilde{L}_{S,S} + \sigma^{-2}I)^{-1}\tilde{L}_{S,U})^{-1}.
+% \label{eq:C_UU}
+% \end{equation}
+% Again by Schur complement, we get
+% \begin{equation}
+% 	C_{U,U} = (\bar{L}^{-1})_{U,U},
+% \end{equation}
+% where
+% \begin{equation}
+% 	\bar{L} :=
+% 	\begin{bmatrix}
+% 		\tilde{L}_{S,S} + \sigma^{-2}I & \tilde{L}_{S,U} \\
+% 		\tilde{L}_{U,S} & \tilde{L}_{U,U}
+% 	\end{bmatrix}.
+% \end{equation}
+% Because $\bar{L}$ satisfies Proposition 6 of \cite{ma_2013}, $\bar{L}^{-1}$ is non-negative elementwise, and so is $C_{U,U}$.
+% \end{proof}
+
+
+% In fact, this Lemma can be applied to also labeled nodes by constructing an auxiliary ``labeled node'' that connects to every other node with weight equal to the regularization parameter of that node.
+
+% \end{appendices}

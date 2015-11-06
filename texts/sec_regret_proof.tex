@@ -1,0 +1,186 @@
+% !TEX root = as_grf_sopt.tex
+
+%\newcommand{\cH}{\mathcal{H}}
+\newcommand{\hgamma}{\hat{\gamma}}
+We present an UCB-style analysis for GP-SOPT.TT and GP-SOPT.TOPK. 
+% and an analysis based on \cite{contal2014gaussian} for GP-SOPT.
+We combine
+several results on GP optimization \citep{srinivas2012information,vanchinathanadaptively} 
+and the spectral bandit analysis \citep{valko2014spectral}. 
+As in these results, our regret bounds depend on the mutual information between $f$ and the 
+observed values $\by_S$ at a set $S$ of nodes: 
+\begin{equation}
+	\mathcal{I}(\by_S ; f) := H(\by_S) - H(\by_S \mid f), 
+\end{equation}
+where $H(\cdot)$ denotes the entropy. If $f$ is drawn from a GP with observation noise distributed independently as $\mathcal{N}(0,\sigma_n)$,
+the mutual information has the following analytical form:
+\begin{equation}
+	\mathcal{I}(\by_S; f) \;=\; \mathcal{I}(\by_S; f_S) \;=\; \frac{1}{2} \log |I + \sigma_n^{-2} \bC_{\bv_S\bv_S}|.
+\end{equation}
+Let 
+\begin{equation}
+	\gamma_T := \max_{S \in V, |S| = T} \frac{1}{2} \log |I + \sigma_n^{-2} \bC_{\bv_S\bv_S}|,
+\end{equation}
+i.e., the maximum information about $f$ gained by observing $T$ function evaluations. 
+The regrets of our algorithms depend on the growth rate of $\gamma_T$, which can be linear in $T$ for arbitrary graphs. 
+However, real-world graphs often possess rich structures, such as clusters or communities, and 
+practical measures of relevance are often highly correlated with these structures, resulting in 
+slowly-growing $\gamma_T$. To formalize this intuition, we follow 
+\cite{valko2014spectral} to consider the \textit{effective dimension}:  
+\begin{equation}
+	d^*_T := \max \left\{i \mid \lambda_i \leq \frac{\sigma_n^{-2}T}{(i-1)\log(1 + \frac{T}{\sigma_n^2 \omega_0})} \right\},	
+\end{equation}
+where $\lambda_i$ is the $i$th smallest eigenvalue of $\widetilde{\cLap}_0$ and $\lambda_1 = \omega_0$.
+The effective dimension is small when the first few $\lambda_i$'s are small and the rest increase rapidly, 
+as is often the case for graphs with community or cluster structures. On the contrary, if all the eigenvalues are close to $\omega_0$, then 
+$d^*_T$ may be linear in $T$. The following lemma bounds $\gamma_T$ in terms of $d^*_T$:
+\begin{lemma}
+	\label{lemma:gamma_T}
+Let $T$ be the total number of rounds. Then 
+\begin{equation*}
+	\gamma_T \leq 2 d^*_T \log \left( 1 + \frac{T}{ \sigma_n^2 \omega_0}\right).
+\end{equation*}
+\end{lemma}
+\begin{proof}
+	By Lemma 7.6 of \cite{srinivas2012information} and the fact that $\lambda_i^{-1}$ is the $i$th largest eigenvalue of the kernel $\bC_0 = \widetilde{\cLap}_0^{-1}$, we have 
+	\begin{equation}
+		\gamma_T \leq \max_{\substack{\{m_i\}_{i=1}^T, m_i \geq 0, \\ \sum_{i=1}^T m_i = T}} \sum_{i=1}^T \log\left( 1 + \frac{m_i}{\sigma_n^2 \lambda_i} \right).
+		\label{eq:gamma_bound}
+	\end{equation}
+	Then by applying the same argument that proves Lemma 6 of \cite{valko2014spectral}, we obtain the desired result. 
+	%Let the maximum be attained at $\{m^*_i\}_{i=1}^T$. 
+	%We then use $d^*_T$ to further bound the r.h.s. of \eqref{eq:gamma_bound}:
+	%\begin{eqnarray}
+	%\gamma_T &\leq& d^*_T \log \left( 1 + \frac{T}{\sigma^2 \omega_0}\right) + \sum_{i = d^*_T + 1}^T \log\left( 1 + \frac{m^*_i}{\sigma^2 \lambda_i}\right) \nonumber \\
+	%         &\leq& d^*_T \log \left( 1 + \frac{T}{\sigma^2 \omega_0}\right) + \sum_{i = d^*_T + 1}^T \frac{m^*_i}{\sigma^2 \lambda_i}\\
+  	%         &\leq& d^*_T \log \left( 1 + \frac{T}{\sigma^2 \omega_0}\right) + \frac{T}{\sigma^2 \lambda_{d^*_T+1}}\\
+	%	 &\leq& 2 d^*_T \log \left( 1 + \frac{T}{\sigma^2 \omega_0}\right).
+	%\end{eqnarray}
+\end{proof}
+%In the next two subsections 
+We will then derive regret bounds in terms of $\gamma_T$.
+
+% \subsubsection{Active Search Regret}
+%Let $\{v^*_i\}_{i=1}^n$ denote the nodes sorted decreasingly based on their function values, with ties broken arbitrarily.
+Recall the cumulative regret of an active search algorithm is defined as
+$ %$\begin{equation}
+	R_T := \sum_{t=1}^T f(v^*_t) - f(v_t), 
+$ %$	\label{eq:search_regret}
+% \end{equation}
+where $\{v_t\}_{t=1}^T$ is the sequence of unique nodes selected by the algorithm.
+For the two proposed UCB-style algorithms, GP-SOPT.TT \eqref{eq:sopt.tt} and GP-SOPT.TOPK \eqref{eq:sopt.topk}, we give the following 
+%For the proposed UCB-style algorithm GP-SOPT.TT, we give the following
+bounds on their cumulative regrets.
+\begin{theorem}
+\label{thm:as_regret}
+Pick $\delta \in (0,1)$. 
+Assume the vector of true node values, $\bff$, has bounded quadratic norm, $\|\bff\|_{\widetilde{\cLap}_0} = \sqrt{\bff^\top \widetilde{\cLap}_0 \bff}\leq B$,\footnote{This is similar to a bounded RKHS norm with kernel $C_0$ in \cite{srinivas2012information}.}
+% Assume the true function $f$ lies in the RKHS characterized by the kernel $K := (L + \omega_0 I)^{-1}$ and its RKHS norm is upper-bounded by $B$.
+and the observation noise $\epsilon_t$ is zero-mean conditioned on the past and is bounded by $\sigma_n$ almost surely. 
+If \textsc{gp-sopt.tt} and \textsc{gp-sopt.topk} 
+use \textsc{grf} prior \eqref{eq:generative} with zero-mean and graph Laplacian $\widetilde{\cLap}_0$, 
+% GP prior with zero mean and covariance $K$, 
+the observation noise model $\mathcal{N}(0,\sigma_n^2)$, and 
+$\alpha_t := \sqrt{2 B + 300 \gamma_t \log^3(t / \delta)}$, then their cumulative regrets will satisfy
+%Its cumulative regret satisfies
+\begin{equation*}
+	\mbox{Pr}(\{R_T \leq k \sqrt{c_1 T \alpha_T \gamma_T}\;\; \forall T \geq 1\}) \geq 1 - \delta,
+\end{equation*}
+where the randomness is over the observation noise and $c_1 := \frac{8/\omega_0}{\log(1 + \sigma_n^{-2})}$. This implies that with high probability,
+\begin{equation*}
+R_T = O(k\sqrt{T}(B \sqrt{d^*_T} + d^*_T)).
+\end{equation*}
+\end{theorem}
+This result is easily derived from the regret analysis of the GP-SELECT algorithm proposed by \cite{vanchinathanadaptively}
+because 
+the exploration terms used by GP-SOPT.TT and GP-SOPT.TOPK both satisfy $\sigma_t(v) \leq s_t(v) \leq k \sigma_t(v)$,
+%the exploration term used by GP-SOPT.TT satisfies $\sigma_t(v) \leq s_t(v) \leq k \sigma_t(v)$,
+thereby maintaining the UCB property. 
+Although our regret bound is $k$ times worse than the GP-SELECT bound, the actual regret
+tends to behave more favorably as we observe in our experiments that after a few tens of rounds, $s_t(v)$ becomes smaller than 
+$k \sigma_t(v)$ for almost all unqueried nodes, and the two proposed algorithm usually outperforms GP-SELECT. 
+We give the proof in Appendix \ref{appendix:proof_as_regret} for completeness.%
+\footnote{An earlier version of this paper follows on to discuss bounds on vanilla GP-SOPT. These proofs used strategies from \cite{contal2014gaussian} which were found to be incorrect. Therefore, they have been removed in the current version of the paper.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\subsubsection{Optimization Regret}
+
+%Following conventions in \cite{contal2014gaussian}, define $\mu_t(v), \sigma_t(v), \rho_t(v,v')$ to be the posterior mean, standard deviation, and correlation of nodes, respectively. Let $f(v)$ to be the true value on node $v$. Define the filtration\footnote{In original paper they defined it to be $\mathbf{Y}_t$} $\{\cH_t\}_{t=1}^T$ to be the history of pulls and outcomes, which forms a martingale. Let
+%\begin{align*}
+%	Y_t
+%	&= ((f(v^\ast) - f(v_t)) - (\mu_t(v^*) - \mu_t(v_t)),
+%	\\
+%	M_T 
+%	&= \sum_{t=1}^T Y_t
+%	\\
+%	\ell_t^2 
+%	&= \sigma_t^2(v_t) + \sigma_t^2(v^*) - \rho_t(v_t,v^*)\sigma_t(v_t)\sigma_t(v^*),
+%	\\
+%	\langle M \rangle_T
+%	&= \sum_{t=1}^T \ell_t^2
+%\end{align*}
+%
+%Here we analyze the GP-SOPT algorithm, whose exploration term is exactly 
+%the risk reduction criterion in $\Sigma$-optimality without any modification.
+%As shown earlier, that criterion may not give rise to an upper-confidence bound and we thus resort 
+%to a different type of analysis proposed recently by \cite{contal2014gaussian},
+%who studied sequential global optimization with Gaussian processes.
+%Using their key result concerning a general GP-based sequential global optimization algorithm, 
+%we obtain a bound on the \textit{optimization regret}:
+%\begin{equation}
+%	R^{o}_T := \sum_{t=1}^T f(v^*) - f(v_t), 
+%\end{equation}
+%where $v^* \in \arg \max_{v \in V} f(v)$ and $\{v_t\}_{t=1}^T$ is 
+%the sequence of nodes picked by GP-SOPT \textit{with replacement}.\footnote{Notice its subscript difference with \eqref{eq:search_regret}.}
+%%In addition to the maximum information gain $\gamma_T$, our bound also depends on 
+%Our bound depends on the maximum
+%total risk reduction in $\Sigma$-optimality:
+%\begin{equation}
+%	\Delta_T := \max_{\bv_T} \; \bone^\top (\bC_0  - \bC_{T\mid \bv_T}) \bone,
+%\end{equation}
+%where $\bv_T$ denotes a sequence of $T$ nodes and $\bC_{T\mid \bv_T}$ denotes the posterior covariance conditioned on $\bv_T$.
+%\begin{theorem}
+%	\label{thm:opt_regret}
+%Pick $\delta \in (0,1)$. Assume the true function $f$ is drawn from a \textsc{gp} with zero mean and covariance $\bC_0 = (\cLap+\omega_0\bI)^{-1}$, and 
+%the observation noise is distributed independently as $\mathcal{N}(0,\sigma^2)$. Let $T$ denote the total number of rounds
+% and $\sigma_{\max}^2 := 1 / \omega_0 + \sigma_n^2$.
+%The optimization regret of \textsc{gp-sopt}, \textsc{gp-sopt.tt}, and \textsc{gp-sopt.topk} using $\alpha_t = \frac{\sqrt{2\log(\nicefrac{2}{\delta})}\sigma_{\max}}{\sqrt[4]{T \Delta_T}}$ all  satisfy that for all $T > 1$, 
+%\begin{equation}
+%\mbox{Pr}\left(R^o_T \leq 
+%	2\sqrt{2\log(\nicefrac{2}{\delta})\sigma_{\max}}\sqrt[4]{T\Delta_T}
+%\right)
+%%\sqrt{\log(\nicefrac{2}{\delta})}\left( \frac{\sigma_{\max}}{2}\sqrt{\frac{T \Delta_T}{c_1 \gamma_T + 1}} + 4 \sqrt{c_1 \gamma_T + 1}\right)  
+%\geq 1  - \delta.
+%\end{equation}
+%\end{theorem}
+%This optimization regret bound is always smaller than $O(\sqrt{\frac{1}{\omega_0}T})$, which appeared in \cite{valko2014spectral}. Indeed, the sum of greedy $\Sigma$-optimality, \eqref{eq:sopt.orig} implies that $\Delta_T$ is %from \eqref{eq:var_update}, $\Delta_T$ is,
+%\begin{equation*}
+%	\sum_{t=1}^T \frac{\be_{v_t}^\top \bC_{t-1}^2 \be_{v_t}}{\be_{v_t}^\top \bC_{t-1} \be_{v_t}+\sigma_n^2}
+%	% \leq \sum_{t=1}^T \frac{\sum_r Q_{t-1}(v_t,r)^2\lambda_r^4}{\sum_{r} Q_{t-1}(v_t,r)^2(\lambda_r^2+\sigma_n^2)}
+%	\leq \sum_{t=1}^T\frac{\lambda_{\max}^2(\bC_{t-1}^2)}{\lambda_{\max}^2(\bC_{t-1})+\sigma_n^2}
+%	\leq \frac{T/\omega_0^2}{\sigma_{\max}^2}.
+%\end{equation*}
+%Further, for graphs that contain large clusters, $\Delta_T$ may introduce a significant improvement. Since one may obtain good surveying results after sampling a few cluster centers, $\Delta_T$ usually grows much slower after a few iterations.
+
+
+%Also, similar proof
+
+%For the graphs in our experiments we observe that $\Delta_T$ usually grows slower than $\gamma_T$. 
+%In this situation, Theorem \ref{thm:opt_regret} and Lemma \ref{lemma:gamma_T} imply that
+%with high probability, $R^o_T$ of GP-SOPT scales as $O(\sqrt[4]{T\tr(\bC_0)})$.
+%The proof is in Appendix \ref{appendix:proof_opt_regret}.
+
+
+%
+%
+%For Lemma 3 in \cite{contal2014gaussian}, they used the pulling rule,
+%\begin{align}
+%	&\mu_t(x^*) - \mu_t(x_t)
+%	\leq
+%	\phi_t(x_t) - \phi_t(x^*),
+%	\\
+%	\Rightarrow\quad
+%	&
+%	R_T \leq M_T + \sum_{t=1}^T (\phi_t(x_t) - \phi_t(x^*)).
+%\end{align}

@@ -1,0 +1,71 @@
+% !TEX root = as_grf_sopt.tex
+
+% \begin{appendices}
+\section{Active Search Regret Bound}
+\label{appendix:proof_as_regret}
+We start by stating the following result.% by \cite{srinivas2012information}.
+\begin{theorem}[Theorem 6, {\cite{srinivas2012information}}]
+	\label{thm:dev}
+	Let $\delta \in (0,1)$. Assume the observation noises are uniformly bounded by $\sigma_n$ and $f$ has RKHS norm $B$ with kernel $C_0$, which is equivalent to $\bff^\top\widetilde{\cLap}_0\bff\leq B^2$. Define 
+	% \begin{equation*}
+	$
+		\alpha_t = \sqrt{2 B^2 + 300 \gamma_t \log(t/\delta)^3},
+		$
+	% \end{equation*}
+	% where $\Vert \cdot \Vert_K$ denotes the RKHS norm associated with the kernel $K$. Then
+	then
+	\begin{equation*}
+		\mbox{Pr}\left(\forall t, \forall v \in V, \;\; |\mu_t(v) - f(v)| \leq \alpha_{t+1} \sigma_t(v) \right) \geq 1 - \delta.
+	\end{equation*}
+\end{theorem}
+We use this result to bound our instantaneous regrets.
+\begin{lemma}
+	Conditioned on the high-probability event in Theorem \ref{thm:dev}, the following bound holds:
+	\begin{equation*}
+		\forall t, \;\; r_t := f(v^*_t) - f(v_t) \leq 2 \alpha_t k \sigma_{t-1}(v_t), 
+	\end{equation*}
+	where $v^*_t$ is the node with the $t$-th globally largest function value and $v_t$ is node selected at round $t$. 
+\end{lemma}
+%\begin{proof}
+\emph{Proof}.
+At round $t$ there are two possible situations. If 
+$v^*_t$ was picked at some earlier round, the definition of $v^*_t$ implies that there exists some $t' < t$ such that $v^*_{t'}$ 
+has not been picked yet. According to our selection rule, the fact that $s_t(v) \geq \sigma_t(v)$, 
+and Theorem \ref{thm:dev}, the following holds:
+\begin{align*}
+	&\mu_{t-1}(v_t) + \alpha_t s_{t-1}(v_t) \geq \mu_{t-1}(v^*_{t'}) + \alpha_t s_{t-1}(v^*_{t'}) \\
+		&\qquad \geq \mu_{t-1}(v^*_{t'}) + \alpha_t \sigma_{t-1}(v^*_{t'})
+	 \geq f(v^*_{t'}) \geq f(v^*_t).
+\end{align*}
+If $v^*_t$ has not been picked yet, a similar argument gives 
+\begin{equation*}
+	\mu_{t-1}(v_t) + \alpha_t s_{t-1}(v_t) \geq \mu_{t-1}(v^*_{t}) + \alpha_t s_{t-1}(v^*_{t}) 
+		%&\geq& \mu_{t-1}(v^*_{t}) + \alpha_t \sigma_{t-1}(v^*_{t})\\
+	\geq f(v^*_t).
+\end{equation*}
+Thus we always have 
+\begin{align*}
+f(v^*_t) &\leq \mu_{t-1}(v_t) + \alpha_t s_{t-1}(v_t) \\
+&\leq f(v_t) + \alpha_t \sigma_{t-1}(v-t) +\alpha_t s_{t-1}(v_t)\\
+%&\leq& f(v_t) + 2 \alpha_t s_{t-1}(v_t) \\
+&\leq f(v_t) + 2 \alpha_t k \sigma_{t-1}(v_t).	
+\end{align*}
+%\end{proof}
+%\begin{lemma}[Lemma 5.3, {\cite{srinivas2012information}}]
+%	The information gain achieved by the selected nodes can be expressed in terms of the predictive variances.
+%	Let $\bv_t = (v_1, v_2, \ldots, v_t)$ denote the sequence of selected nodes. Then
+%	\begin{equation*}
+%		\mathcal{I}(\by_{\bv_t};f_{\bv_t}) = \frac{1}{2} \sum_{i=1}^t \log(1 + \sigma^{-2}\sigma_{i-1}(v_i)^2). 
+%	\end{equation*}
+%\end{lemma}
+%Next we bound the sum of squared instantaneous regrets in terms of the maximum information gain. 
+\begin{lemma}[Lemma 5.4, {\cite{srinivas2012information}}]
+	Let $\alpha_t$ be defined as in Theorem \ref{thm:dev} and $c_1$ be defined as in Theorem \ref{thm:as_regret}.
+	Conditioned on the high probability event of Theorem \ref{thm:dev}, the following holds:
+	\begin{equation*}
+	\forall T\geq 1, \;\;\sum_{t=1}^T r_t^2 \leq \alpha_T k^2 c_1 \mathcal{I}(\by_{\bv_T};f_{\bv_T}) \leq \alpha_T k^2 c_1 \gamma_T.	
+	\end{equation*}
+\end{lemma}
+Finally, the Cauchy-Schwarz inequality gives  
+$R_T \leq \sqrt{T \sum_{t=1}^T r_t^2} \leq k \sqrt{T c_1 \alpha_T \gamma_T}.$
+% \end{appendices}

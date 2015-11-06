@@ -1,0 +1,219 @@
+% !TEX root = as_grf_sopt.tex
+
+\newcommand{\cG}{\mathcal{G}}
+\newcommand{\cH}{\mathcal{H}}
+\newcommand{\bv}{\mathbf{v}}
+%\newcommand{\bk}{\mathbf{k}}
+%\newcommand{\bK}{\mathbf{K}}
+\newcommand{\bc}{\mathbf{c}}
+\newcommand{\bff}{\mathbf{f}}
+\newcommand{\bSigma}{\boldsymbol{\Sigma}}
+\newcommand{\bomega}{\boldsymbol{\omega}}
+
+
+
+
+The database where active search is performed is given as a graph $\cG$ with known structure (edge connections). The edge connections are nonnegative and we use $\bA$ to represent the adjacency matrix of $\cG$, such that $A_{ij}\geq0, \forall i,j$. Let 
+$\mathcal{V}=\{v_1,\dotsc,v_n\}$ denote the set of all nodes in $\cG$.
+From $\bA$ we can derive a graph Laplacian matrix, 
+$\cLap = \bD - \bA$, 
+where $\bD=\diag(\bA\cdot\mathbf{1})=\diag(\deg(v_1),\dotsc,\deg(v_n))$.  
+%A normalized Laplacian is defined to be $
+%\widetilde{\cLap} = \bD^{-\frac{1}{2}} \cLap \bD^{-\frac{1}{2}} 
+%= \bI - \bD^{-\frac{1}{2}} \bA \bD^{-\frac{1}{2}} .
+%$
+
+Every node $v$ in our graph holds one reward value
+we denote as $f(v)$, indicating whether the node is the search target. The reward is unknown at first and can be revealed only when it is queried explicitly. For mathematical benefits, we relax the reward to be a real value and introduce a Gaussian noise to its observation, as
+\begin{equation}
+	y(v)=f(v)+\epsilon, \;{\rm where}\; \epsilon\sim\mathcal{N}(0,\sigma_n^2).
+	\label{eq:observation}
+\end{equation}
+
+
+Similar to bandit problems, querying a node also means collecting the true reward of that node.
+Our goal is to design a query strategy, 
+which interactively generates a query sequence $\bv_t = (v_1,\dotsc,v_t)^\top$ without any repeated selections, in order 
+to maximize the cumulative reward 
+\begin{equation}
+	F_T = \sum_{t=1}^T f(v_t).
+\end{equation} 
+
+The cumulative reward is always upper-bounded by the optimal strategy with full knowledge of the true rewards on all the nodes. Let $\bv^*_t=(v^*_1,\dotsc,v^*_t)$ to be the optimal query sequence (without repeated selections),
+our analysis in Theorem~\ref{thm:as_regret} (Section~\ref{sec:regret}) bounds the cumulative regret between our strategy and the optimal strategy,
+\begin{equation}
+	R_T = \sum_{t=1}^T f(v^*_t) - f(v_t).
+\end{equation}
+
+
+
+The above characterizes an active search problem, provided that the values of $f(v)$ are binary and the sequences $\bv_t$ and $\bv_t^*$ do not allow repeated selections. 
+Otherwise, 
+the above can also model a multi-armed bandit problem
+if we relax $f(v)$ to be real and $\bv_t$ and $\bv_t^*$ to allow repeated selections. 
+In fact, our formulation discusses them together, providing analysis to the slightly more rigorous active search modeling except that $f(v)$ is relaxed to real values.
+
+
+% the cumulative reward (or regret), provided that the values of $f(v)$ are binary, resemble active search recalls of the positives (or its sub-optimality in this objective). Also, particular to our active search application, the sequences $\bv_t$ and $\bv_t^*$ do not allow duplicated selections. 
+% Except for these two differences, $F_T$ and $R_T$ are the same as  in ordinary bandit problems.
+
+In our notations, bold letters indicate vectors or matrices, while light letters without subscripts mean functions and light letters with subscripts represent scalars or specific elements. $t$, $\tau$, and $T$ are time indices, which when applied as subscripts, always mean the selection or model at that time step. Other letters as subscripts, such as $i,j,n$, always mean the natural indices. %In case of confusions, brackets and superscripts are applied to time indices.
+
+
+\subsection{GAUSSIAN RANDOM FIELD PRIOR}
+A key assumption in this work is that the reward values, or the target labels, are constrained 
+by the graph structure in a non-trivial way. Otherwise,  
+the input graph provides little information about the reward function, making active search 
+extremely difficult. More specifically,  
+we assume that the reward values of all the nodes in the graph, 
+collectively denoted as a vector  
+$\bff\in\mathbb{R}^N$, are random variables distributed jointly as  
+%are generated with respect to the graph adjacency matrix, in that there is always a bigger probability for connected nodes to share similar values, as
+\begin{align}
+	 \log 
+	p(\bff) 
+	% &\propto
+	& \simeq
+	% \exp\mathopen{}\left(
+		-\sum_{i=1}^N\sum_{j=1}^N \frac{A_{ij}(f_i-f_j)^2}{2} -   \sum_{j=1}^N  \frac{\omega_0 (f_j-\mu_0)^2}{2}
+	% \right)
+	,
+	\nonumber
+	\\
+	\mbox{i.e., }\;
+	\bff &\sim \mathcal{N}\mathopen{}\left(
+		\bmu_0 = \mu_0\cdot\bone,\; 
+		\bC_0 = \left(\cLap + \omega_0 \bI\right)^{-1}
+	\right),
+	\label{eq:generative}
+\end{align}
+where %is the vector concatenation of the reward values of all the nodes in the graph,
+$\mu_0$ is a prior mean,
+and
+$\omega_0 > 0$ is a regularization parameter. 
+According to this probabilistic model, it is more likely for connected nodes to share similar values than not.
+Define the initial covariance matrix as, $\bC_0 = \left(\cLap + \omega_0 I\right)^{-1}$, and denote $\widetilde{\cLap}_0=\cLap+\omega_0\bI$.
+The above prior model is also known as \textbf{Gaussian random fields (GRFs)}.
+%Equivalently, we can replace $\cLap$ with $\widetilde{\cLap}$ to assume the generation model, \eqref{eq:generative}, from a normalized graph Laplacian.%
+%\todo{many things break.}
+
+
+%%%%%%%%%%
+\subsection{POSTERIOR INFERENCE}
+
+Assume the nature draws one sample from the prior model, \eqref{eq:generative}, and we use query observations, \eqref{eq:observation}, to converge to that particular draw 
+by performing posterior inference conditioned on the history, 
+\begin{equation*}
+	\cH_t = \{(v_\tau, y_\tau)\}_{\tau=1}^t
+	= \{\bv_t, \by_t\},
+\end{equation*}
+which allows us to update the posterior distribution as,
+\begin{equation*}
+	\log p(\bff\mid\mathcal{H}_t) \simeq
+	 - \frac{1}{2}(\bff-\bmu_0)^\top \widetilde{\cLap}_0 (\bff-\bmu_0) 
+	- \sum_{\tau=1}^t \frac{(y_\tau-f_{v_\tau})^2}{2\sigma_n^2}.
+\end{equation*}
+Notice that the prior distribution and likelihood model form Gaussian conjugate pairs. Denote the posterior distribution as, 
+$
+\bff \mid \cH_t \sim \mathcal{N}(\bmu_t, \bC_t).
+$
+To some readers, it is easier to express $\bmu_t$ and $\bC_t$ using the prior \emph{precision} matrix, as
+\begin{equation}
+	\bmu_t = \bC_t
+	\Bigl(\widetilde{\cLap}_0\bmu_0 +  \sum_{\tau=1}^t \frac{y_\tau \be_{v_\tau} }{\sigma_n^2}\Bigr),
+	\,\,\;
+	\bC_t^{-1} = \widetilde{\cLap}_0 + \frac{1}{\sigma_n^2}\mathbf{H}_t
+	\label{eq:post_prec}
+\end{equation}
+where $\be_{v_\tau}=(0,\dotsc,0,1,0,\dotsc,0)^\top$ is an indicator vector of index $v_\tau$ and $\mathbf{H}_t$
+% ={\rm diag}\bigl(\mathbf{h}_t=\sum_{\tau=1}^t \be_{v_\tau}\bigr)\in\mathbb{R}^{n\times n}$ 
+is a diagonal matrix of index counts from $\bv_t$, whose $k$th diagonal element is $\sum_{\tau=1}^t e_{v_\tau}(v_k)$. 
+
+
+However, for convenience in later descriptions and to connect to \textbf{ Gaussian Process (GP) } literature \citep{gpml}, we also use the prior \emph{covariance} matrix to express the posterior distribution, as,
+\begin{align}
+	\begin{split}
+		&\mu_t(v) = \mu_0(v) + \bc_{\bv_t v}^\top (\bC_{\bv_t\bv_t} + \sigma_n^2 \bI)^{-1} (\by_t - \bmu_{\bv_t}),
+		\\
+		&\! C_t(v,v') = C_0(v,v') - \bc_{\bv_t v}^\top (\bC_{\bv_t\bv_t} + \sigma_n^2 \bI)^{-1} \bc_{\bv_t v'},
+	\end{split}
+		\label{eq:var_update}
+	% &\mu_t(v) = \mu_0(v) + \bc_{\bv_t v}^\top (\bC_{\bv_t\bv_t} + \sigma_n^2 \bI)^{-1} (\by_t - \bmu_{\bv_t}),
+	% \label{eq:mean_update}
+	% \\
+	% &\! C_t(v,v') = C_0(v,v') - \bc_{\bv_t v}^\top (\bC_{\bv_t\bv_t} + \sigma_n^2 \bI)^{-1} \bc_{\bv_t v'},
+	% \label{eq:var_update}
+\end{align}
+where the matrices can all be defined in terms of the prior:
+\begin{align*}
+	\bc_{\bv_t v} &= (C_0(v_1,v) ,\cdots, C_0(v_t,v))^\top\\ 
+	\bC_{\bv_t \bv_t} &= \bigl( C_0(v_\tau,v_{\tau'}) \bigr)_{\tau,\tau'=1}^t \\
+	\bmu_{\bv_t} &= (\mu_0(v_1),\cdots, \mu_0(v_t))^\top.
+\end{align*}
+
+The above update rules also applies to any time interval that starts with $t_0$, by replacing prior models (variables with subscript ``$0$'') with the model at time $t_0$.
+
+Define simple notations for correlation coefficients and standard deviations from the covariance matrix, 
+$
+	C_t(v,v') = \rho_t(v,v')\sigma_t(v)\sigma_t(v'),
+$
+which implies that $\sigma_t^2(v) = C_t(v,v)$.
+Define $\bc_t(v)$ to be the column of $\bC_t$ corresponding to node $v$.
+
+
+
+
+%\subsection{Connection to Spectral Bandits}
+%
+%\cite{valko2014spectral} gave another interpretation they called spectral bandits. This interpretation uses spectral decomposition of graph Laplacian, $\cLap$, and works in the eigen-space. We will show that the inference rules are fundamentally similar to what we described above, which establishes connections to conventional linear bandit problems.
+%
+%Let eigen-decomposition of the graph Laplacian to be, 
+%$\cLap=\bQ\bLam_\cLap \bQ^\top$, 
+%where 
+%$\bQ = \begin{pmatrix} \bx_1,\dotsc,\bx_n\end{pmatrix}^\top$
+% is an orthogonal matrix and 
+%$\bLam$
+%is the diagonal concatenation of eigen-values of $\cLap$,
+% such that 
+%% \begin{equation}
+%$	\bC_0(v,v') = \bx_v^\top \left( \bLam_\cLap + \omega_0 \bI\right)^{-1} \bx_{v'}.
+%$
+%%	\label{eq:eigen}
+%%\end{equation} 
+%Define $\bLam_0 = \bLam_\cLap + \omega_0\bI$. Notice that $\bx_j$s are not eigen-vectors, but rather defined for notation simplicity. Nonetheless, $\{\bx_j\in\mathbb{R}^n : j=1,\dotsc,n\}$ are still orthogonal.
+%
+%
+%With the spectral approach, a true loading vector, $\balpha\in\mathbb{R}^n$, is generated with prior, $ \balpha\sim\mathcal{N}(0, \bLam_0^{-1})$. This is equivalent to $\bff = \bQ \balpha$ and $f(v) = \bx_v^\top \balpha$ with our prior.
+%
+%The observations are still on the nodes, as 
+%$
+%y(v) = \bx_v^\top \balpha + \epsilon, \epsilon\sim\mathcal{N}(0, \sigma_n^2).
+%$
+%With history $\cH_t=\{\bv_t, \by_t\}$, the posterior becomes,
+%%
+%%\begin{align*}
+%$	\balpha_t \sim \mathcal{N}(\bm_t, \bLam_t^{-1}), 
+%$
+%with
+%$	 \bLam_t = \frac{1}{\sigma_n^2}\bX_t^\top \bX_t + \bLam_0,
+%$
+%$	\bm_t = \frac{1}{\sigma_n^2} \bLam_t^{-1}\bX_t^\top \by_t,
+%$
+%%\end{align*}
+%where 
+%$\bX_t=\begin{pmatrix}\bx_{v_1},\dotsc,\bx_{v_n}\end{pmatrix}^\top$ 
+%and 
+%$\by_t = \begin{pmatrix}y_1,\dotsc, y_t\end{pmatrix}^\top$.
+%
+%The posterior inference is also consistent with our \textsc{grf} model, 
+%by trivial applications of Schur complement to verify that 
+%$
+%	\bQ \bLam_t^{-1} \bQ^\top 
+%	= \bC_t 
+%$
+%and
+%$	\bQ\bm_t
+%	=
+%	\bmu_t.
+%$
+% (Appendix~\ref{app:sec:spectral_equivalence}).
