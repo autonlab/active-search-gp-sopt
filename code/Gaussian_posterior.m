@@ -3,7 +3,7 @@ function [mn, prec, cov] = Gaussian_posterior( ...
   % function [p_vec, p_mat] = Gaussian_posterior( ...
   %     mode, p_vec0, p_mat0, X, y, sigma_n)
   % y = X*f = H' * f
-  
+
   [m,n] = size(X);
   t = size(y,2);
   
@@ -20,6 +20,7 @@ function [mn, prec, cov] = Gaussian_posterior( ...
     prec = [];
   end
   
+  % cov_t from (6) in http://auai.org/uai2015/proceedings/papers/307.pdf
   if ~isempty(cov0)
     cov0_y = X * cov0 * X' + sigma_n^2 * eye(size(y, 1));
     R0_y = chol(cov0_y);
@@ -29,6 +30,8 @@ function [mn, prec, cov] = Gaussian_posterior( ...
     cov = [];
   end
   
+  % mn_t with known cov_t, derived from (5) and also substituted L_0 by cov_t^-1 in
+  % http://auai.org/uai2015/proceedings/papers/307.pdf
   if ~isempty(cov)
     mn = mn0 + cov  * (sigma_n^-2 * X'*(y-X*mn0));
   else
